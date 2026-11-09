@@ -28,10 +28,15 @@ export function buildChain(settings: { provider: string; priority: number; enabl
     openai("openrouter", "https://openrouter.ai/api/v1", "OPENROUTER_API_KEY", e.OPENROUTER_VISION_MODEL ?? "", ["chat", "vision"]),
     openai("nvidia", "https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY", e.NVIDIA_MODEL ?? "meta/llama-3.1-70b-instruct", ["chat"]),
     cf ? openai("cloudflare", `https://api.cloudflare.com/client/v4/accounts/${cf}/ai/v1`, "CLOUDFLARE_API_TOKEN", e.CLOUDFLARE_MODEL ?? "@cf/meta/llama-3.1-8b-instruct", ["chat"]) : null,
+    openai("ollama", e.OLLAMA_BASE_URL ?? "https://ollama.com/v1", "OLLAMA_API_KEY", e.OLLAMA_MODEL ?? "gpt-oss:120b", ["chat"]),
+    e.ANYAPI_BASE_URL ? openai("anyapi", e.ANYAPI_BASE_URL, "ANYAPI_API_KEY", e.ANYAPI_MODEL ?? "", ["chat"]) : null,
+    openai("opencode", e.OPENCODE_BASE_URL ?? "https://opencode.ai/zen/v1", "OPENCODE_API_KEY", e.OPENCODE_MODEL ?? "", ["chat"]),
+    openai("siliconflow", e.SILICONFLOW_BASE_URL ?? "https://api.siliconflow.com/v1", "SILICONFLOW_API_KEY", e.SILICONFLOW_MODEL ?? "Qwen/Qwen2.5-72B-Instruct", ["chat"]),
+    openai("sambanova", "https://api.sambanova.ai/v1", "SAMBANOVA_API_KEY", e.SAMBANOVA_MODEL ?? "Meta-Llama-3.3-70B-Instruct", ["chat"]),
     openai("huggingface", "https://router.huggingface.co/v1", "HUGGINGFACE_API_KEY", e.HUGGINGFACE_MODEL ?? "meta-llama/Llama-3.3-70B-Instruct", ["chat"]),
   ].filter((p): p is Provider => !!p);
   if (!settings.length) return all;
   const pr = new Map(settings.map((s) => [s.provider, s]));
   return all.filter((p) => pr.get(p.id)?.enabled !== false).sort((a, b) => (pr.get(a.id)?.priority ?? 99) - (pr.get(b.id)?.priority ?? 99));
 }
-export const PROVIDER_IDS = ["gemini", "groq", "openrouter", "nvidia", "cloudflare", "huggingface"];
+export const PROVIDER_IDS = ["gemini", "groq", "openrouter", "nvidia", "cloudflare", "ollama", "anyapi", "opencode", "siliconflow", "sambanova", "huggingface"];

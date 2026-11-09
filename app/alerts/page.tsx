@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n-server";
-import Nav from "@/components/Nav";
 export default async function Alerts() {
   const sb = await supabaseServer(); const { t, lang } = await getT();
   const { data: docs } = await sb.from("documents").select("id,title,expiry_date").is("deleted_at", null).is("archived_at", null).not("expiry_date", "is", null).order("expiry_date");
@@ -16,5 +15,5 @@ export default async function Alerts() {
     {[...byMonth].map(([m, list]) => (<div key={m} style={{ display: "grid", gap: 10 }}><div className="h" style={{ fontSize: 18 }}>{m}</div>
       {list!.map((d) => { const [label, cls, sub] = st(d.expiry_date!); return (<Link key={d.id} href={`/documents/${d.id}`} className="k row"><div><b>{d.title}</b><div className="m" style={{ fontSize: 12 }}>{d.expiry_date} • {sub}</div></div><span className={`chip ${cls}`}>{label}</span></Link>); })}</div>))}
     {!docs?.length && <div className="empty"><div className="m">{t("No documents with an expiry date. Add a date when uploading to get reminders.")}</div></div>}
-    <Nav active="/alerts" /></main>);
+</main>);
 }

@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Nav from "@/components/Nav";
 import { useT } from "@/components/LangProvider";
 type Card = { id: string; title: string; category: string | null; expiry_date: string | null };
 type Msg = { role: "user" | "ai"; text: string; cards?: Card[] };
@@ -47,5 +46,5 @@ export default function Assistant() {
       <input aria-label={t("Ask about your documents…")} placeholder={t("Ask about your documents…")} dir={d} value={input} onChange={(e) => setInput(e.target.value)} />
       {busy ? <button type="button" className="send stop" aria-label={t("Stop")} onClick={() => ctl.current?.abort()}><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg></button>
         : <button className="send" aria-label={t("Send")}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" /></svg></button>}
-    </form><Nav active="/assistant" /></main>);
+    </form></main>);
 }

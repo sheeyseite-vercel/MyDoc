@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n-server";
-import Nav from "@/components/Nav";
 import DocActions from "./DocActions";
 import OcrPanel from "./OcrPanel";
 export default async function Detail({ params }: { params: Promise<{ id: string }> }) {
@@ -13,5 +12,5 @@ export default async function Detail({ params }: { params: Promise<{ id: string 
     {d.archived_at && <span className="chip m" style={{ alignSelf: "flex-start" }}>{t("Archived")}</span>}
     {rows.filter(([, v]) => v).map(([k, v]) => (<div key={k} className="k"><div className="m" style={{ fontSize: 12 }}>{k}</div>{v}</div>))}
     <DocActions doc={{ id: d.id, title: d.title, is_favorite: d.is_favorite, archived: !!d.archived_at, notes: d.notes }} />
-    <OcrPanel id={d.id} hasText={!!d.ocr_text} status={d.status} /><Nav active="/" /></main>);
+    <OcrPanel id={d.id} hasText={!!d.ocr_text} status={d.status} /></main>);
 }

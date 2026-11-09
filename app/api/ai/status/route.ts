@@ -5,6 +5,6 @@ import { cooldownInfo } from "@/lib/ai/router";
 export async function GET() {
   const sb = await supabaseServer(); const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const on = new Set(buildChain().map((p) => p.id));
+  const on = new Set(buildChain().map((p) => p.id)); const lim = new Set(cooldownInfo().map((c) => c.key.split(":")[0]));
   return NextResponse.json({ providers: PROVIDER_IDS.map((id) => ({ id, configured: on.has(id) })), limited: cooldownInfo() });
 }

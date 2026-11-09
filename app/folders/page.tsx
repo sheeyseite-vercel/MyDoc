@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useT } from "@/components/LangProvider";
-import Nav from "@/components/Nav";
 export default function Folders() {
   const { t } = useT(); const [fs, setFs] = useState<{ id: string; name: string }[]>([]); const [name, setName] = useState(""); const [err, setErr] = useState("");
   const load = useCallback(async () => { const { data } = await supabaseBrowser().from("folders").select("id,name").order("name"); setFs(data ?? []); }, []);
@@ -17,5 +16,5 @@ export default function Folders() {
     {err && <div className="err" role="alert">{err}</div>}
     {fs.length ? fs.map((f) => (<div key={f.id} className="k row"><Link href={`/?folder=${f.id}`} style={{ color: "inherit", flex: 1 }}><b>{f.name}</b></Link><button className="chip g" style={{ background: "none", minHeight: 40 }} onClick={() => rename(f)}>{t("Rename")}</button><button className="chip bad" style={{ background: "none", minHeight: 40 }} onClick={() => del(f)}>{t("Delete")}</button></div>))
       : <div className="empty"><div className="h" style={{ fontSize: 20 }}>{t("No folders yet.")}</div></div>}
-    <Nav active="/" /></main>);
+</main>);
 }

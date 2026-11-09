@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { createReminders } from "@/lib/reminders";
 import { useT } from "@/components/LangProvider";
-import Nav from "@/components/Nav";
 const OK = ["application/pdf", "image/jpeg", "image/png", "image/webp"]; const MAX = 15 * 1024 * 1024;
 export default function Upload() {
   const { t } = useT(); const [files, setFiles] = useState<File[]>([]); const [msg, setMsg] = useState(""); const [busy, setBusy] = useState(false);
@@ -46,5 +45,5 @@ export default function Upload() {
       <label>{t("Folder (optional)")}<select name="folder" defaultValue=""><option value="">{t("No folder")}</option>{folders.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
       {msg && <div className="err" role="alert">{msg}</div>}
       <button className="btn" disabled={busy}>{busy ? t("Saving…") : t("Save")}</button>
-    </form><Nav active="/upload" /></main>);
+    </form></main>);
 }

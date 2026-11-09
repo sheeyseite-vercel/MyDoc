@@ -55,6 +55,10 @@ const D: Record<string, [string, string]> = {
   "Install the app on your device": ["Instalar la app en tu dispositivo", "تثبيت التطبيق على جهازك"],
   "To install on iPhone: open the site in Safari, tap Share, then “Add to Home Screen”.": ["Para instalar en iPhone: abre el sitio en Safari, pulsa Compartir y luego «Añadir a pantalla de inicio».", "للتثبيت على آيفون: افتح الموقع في Safari، اضغط زر المشاركة، ثم «إضافة إلى الشاشة الرئيسية»."],
   "To install: open the browser menu (⋮) then choose “Install app” or “Add to Home Screen”.": ["Para instalar: abre el menú del navegador (⋮) y elige «Instalar app» o «Añadir a pantalla de inicio».", "للتثبيت: افتح قائمة المتصفح (⋮) ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»."],
+  "AI document analysis": ["Análisis de documentos con IA", "تحليل الوثائق بالذكاء الاصطناعي"], "AI providers": ["Proveedores de IA", "مزودو الذكاء الاصطناعي"], "Automatic": ["Automático", "تلقائي"],
+  "Picks the first available provider and switches automatically when one reaches its limit.": ["Elige el primer proveedor disponible y cambia solo cuando uno alcanza su límite.", "يختار أول مزود متاح ويبدّل تلقائياً عند وصول أحدهم إلى حده."],
+  "Ready": ["Listo", "يعمل"], "Not configured": ["Sin configurar", "غير مُعدّ"], "Limit reached": ["Límite alcanzado", "بلغ الحد"], "Toggle light or dark mode": ["Cambiar modo claro u oscuro", "تبديل الوضع الفاتح أو الداكن"],
+  "Data": ["Datos", "البيانات"], "Account": ["Cuenta", "الحساب"],
   "You are offline. Some features are unavailable.": ["Sin conexión. Algunas funciones no están disponibles.", "لا يوجد اتصال بالإنترنت. بعض الميزات غير متاحة."],
 };
 export function tr(l: Lang, s: string, v?: Record<string, string | number>) {
