@@ -1,19 +1,22 @@
+"use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabaseServer } from "@/lib/supabase/server";
-import { getT } from "@/lib/i18n-server";
-export default async function Alerts() {
-  const sb = await supabaseServer(); const { t, lang } = await getT();
-  const { data: docs } = await sb.from("documents").select("id,title,expiry_date").is("deleted_at", null).is("archived_at", null).not("expiry_date", "is", null).order("expiry_date");
-  const { data: due } = await sb.from("reminders").select("id,days_before,documents(id,title)").lte("remind_at", new Date().toISOString()).order("remind_at", { ascending: false }).limit(10);
-  const days = (d: string) => Math.ceil((new Date(d).getTime() - Date.now()) / 864e5);
-  const st = (d: string) => { const n = days(d); return n < 0 ? [t("Expired"), "bad", t("Expired {n} days ago", { n: -n })] : n <= 90 ? [t("Expiring soon"), "warn", t("{n} days left", { n })] : [t("Valid"), "good", t("{n} days left", { n })]; };
-  const byMonth = new Map<string, typeof docs>();
-  (docs ?? []).forEach((d) => { const k = new Date(d.expiry_date!).toLocaleDateString(lang, { month: "long", year: "numeric" }); byMonth.set(k, [...(byMonth.get(k) ?? []), d]); });
-  const dueList = ((due ?? []) as unknown as { id: string; days_before: number; documents: { id: string; title: string } | { id: string; title: string }[] | null }[]).map((r) => ({ ...r, doc: Array.isArray(r.documents) ? r.documents[0] : r.documents })).filter((r) => r.doc);
+import { useT } from "@/components/LangProvider";
+import { alertsCache, loadAlerts } from "@/lib/data";
+export default function Alerts() {
+  const { t, lang } = useT(); const [d, setD] = useState({ ...alertsCache }); const [err, setErr] = useState(false);
+  useEffect(() => { loadAlerts().then((x) => setD({ ...x })).catch(() => setErr(true)); }, []);
+  const days = (s: string) => Math.ceil((new Date(s).getTime() - Date.now()) / 864e5);
+  // أحمر خفيف: منتهية/قريبة (≤90 يوماً) • أصفر خفيف: أقل من عام • أخضر خفيف: أكثر من عام
+  const st = (s: string) => { const n = days(s); return n < 0 ? [t("Expired"), "tr", t("Expired {n} days ago", { n: -n })] : n <= 90 ? [t("Expiring soon"), "tr", t("{n} days left", { n })] : n <= 365 ? [t("Valid"), "ty", t("{n} days left", { n })] : [t("Valid"), "tg", t("{n} days left", { n })]; };
+  const byMonth = new Map<string, NonNullable<typeof d.docs>>();
+  (d.docs ?? []).forEach((x) => { const k = new Date(x.expiry_date).toLocaleDateString(lang, { month: "long", year: "numeric" }); byMonth.set(k, [...(byMonth.get(k) ?? []), x]); });
   return (<main className="wrap"><h1 className="h" style={{ fontSize: 28, margin: 0 }}>{t("Dates & alerts")}</h1>
-    {dueList.length > 0 && <><div className="h g" style={{ fontSize: 18 }}>{t("Due reminders")}</div>{dueList.map((r) => (<Link key={r.id} href={`/documents/${r.doc!.id}`} className="k" style={{ borderColor: "var(--gold)" }}><b>{r.doc!.title}</b><div className="m" style={{ fontSize: 12 }}>{t("Reminder {n} days before expiry", { n: r.days_before })}</div></Link>))}</>}
+    {err && !d.docs && <div className="err" role="alert">{t("Could not load documents. Check your connection.")}</div>}
+    {!d.docs && !err && <div className="sk" style={{ flex: 1 }} aria-busy="true" />}
+    {!!d.due?.length && <><div className="h g" style={{ fontSize: 18 }}>{t("Due reminders")}</div>{d.due.map((r) => (<Link key={r.id} href={`/documents/${r.doc.id}`} className="k" style={{ borderColor: "var(--gold)" }}><b>{r.doc.title}</b><div className="m" style={{ fontSize: 12 }}>{t("Reminder {n} days before expiry", { n: r.days_before })}</div></Link>))}</>}
     {[...byMonth].map(([m, list]) => (<div key={m} style={{ display: "grid", gap: 10 }}><div className="h" style={{ fontSize: 18 }}>{m}</div>
-      {list!.map((d) => { const [label, cls, sub] = st(d.expiry_date!); return (<Link key={d.id} href={`/documents/${d.id}`} className="k row"><div><b>{d.title}</b><div className="m" style={{ fontSize: 12 }}>{d.expiry_date} • {sub}</div></div><span className={`chip ${cls}`}>{label}</span></Link>); })}</div>))}
-    {!docs?.length && <div className="empty"><div className="m">{t("No documents with an expiry date. Add a date when uploading to get reminders.")}</div></div>}
-</main>);
+      {list.map((x) => { const [label, cls, sub] = st(x.expiry_date); return (<Link key={x.id} href={`/documents/${x.id}`} className="k row"><div><b>{x.title}</b><div className={cls} style={{ fontSize: 12 }}>{x.expiry_date} • {sub}</div></div><span className={`chip ${cls}`}>{label}</span></Link>); })}</div>))}
+    {d.docs && !d.docs.length && <div className="empty"><div className="m">{t("No documents with an expiry date. Add a date when uploading to get reminders.")}</div></div>}
+  </main>);
 }

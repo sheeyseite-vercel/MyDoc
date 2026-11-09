@@ -50,3 +50,14 @@ a:focus:not(:focus-visible),button:focus:not(:focus-visible){outline:none}.nv a:
 .sw[aria-checked=true]{background:var(--gold)}.sw[aria-checked=true] i{inset-inline-start:23px}
 .dot{width:10px;height:10px;border-radius:50%;flex:none}.dot.on{background:#3DBE8B}.dot.off{background:#E0605E}
 .chev{color:var(--muted);transition:transform .15s;flex:none}.open .chev{transform:rotate(180deg)}
+:root{--c-red:#EE9A9A;--c-yellow:#E6CB7A;--c-green:#8FD3B6}
+[data-theme=light]{--bg:#F3F5F2;--surface:#FFFFFF;--line:#DCE3DE;--gold:#2F6F6A;--text:#1C2B29;--muted:#5A6B67;--danger:#B3474A;--ok:#2D7A58;--c-red:#B3474A;--c-yellow:#8F6D00;--c-green:#2D7A58}
+.tr{color:var(--c-red)}.ty{color:var(--c-yellow)}.tg{color:var(--c-green)}
+.chip.tr,.chip.ty,.chip.tg{border-color:color-mix(in srgb,currentColor 35%,transparent);background:color-mix(in srgb,currentColor 12%,transparent)}
+.drop{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:26px 20px;border:1.5px dashed var(--gold);border-radius:24px;background:var(--surface);cursor:pointer;color:var(--text);font-size:15px}.drop input{display:none}
+.fcard{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;display:grid;gap:14px}.fcard input,.fcard select{height:48px;background:var(--bg)}
+.qp{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}.qp button{padding:7px 14px;border-radius:18px;border:1px solid var(--line);background:var(--bg);color:var(--muted);font:500 13px inherit;cursor:pointer}.qp button.on{border-color:var(--gold);color:var(--gold);font-weight:600}
+.thumb{width:46px;height:46px;border-radius:12px;object-fit:cover;background:var(--bg);flex:none;display:flex;align-items:center;justify-content:center;color:var(--gold)}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.bcard{display:grid;gap:6px;align-content:start;min-height:132px}
+.catpick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.catpick button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:11px;cursor:pointer}.catpick button.on{border-color:var(--gold);color:var(--gold);font-weight:600}
+[dir=rtl] .flip{transform:scaleX(-1)}

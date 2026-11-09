@@ -3,10 +3,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useT } from "@/components/LangProvider";
-type Doc = { id: string; title: string; category: string | null; issuer: string | null };
 type View = "all" | "fav" | "arch";
 const VIEWS = [["all", "All"], ["fav", "Favorites"], ["arch", "Archive"]] as const;
-const cache = new Map<string, Doc[]>(); // يبقى بين التنقلات لعرض فوري ثم تحديث في الخلفية
+import { docsCache as cache, type Doc } from "@/lib/data";
 const ic = { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
 export default function Home() {
   const { t, lang } = useT();

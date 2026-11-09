@@ -10,7 +10,7 @@
 حدود المزودين المؤقتة تُحفظ في ذاكرة الخادم وتُصفَّر عند إعادة تشغيله.
 
 ## التشغيل المحلي
-1. أنشئ مشروعاً في Supabase ونفّذ بالترتيب من SQL Editor: `supabase/migrations/001_init.sql` ثم `002_storage_limits.sql` (ينشئ bucket خاصاً باسم documents ويقيّد الأنواع والحجم).
+1. أنشئ مشروعاً في Supabase ونفّذ بالترتيب من SQL Editor: `supabase/migrations/001_init.sql` ثم `002_storage_limits.sql` ثم `003_bills.sql` (قسم الفواتير) (ينشئ bucket خاصاً باسم documents ويقيّد الأنواع والحجم).
 2. انسخ `.env.example` إلى `.env.local` واملأ مفاتيح Supabase ومفتاحاً واحداً على الأقل من مزودي AI. لا ترفع هذا الملف إلى Git.
 3. `npm install` ثم `npm run dev`، وافتح http://localhost:3000
 4. الاختبارات: `npm test`

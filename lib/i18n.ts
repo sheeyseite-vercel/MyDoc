@@ -59,6 +59,13 @@ const D: Record<string, [string, string]> = {
   "Picks the first available provider and switches automatically when one reaches its limit.": ["Elige el primer proveedor disponible y cambia solo cuando uno alcanza su límite.", "يختار أول مزود متاح ويبدّل تلقائياً عند وصول أحدهم إلى حده."],
   "Ready": ["Listo", "يعمل"], "Not configured": ["Sin configurar", "غير مُعدّ"], "Limit reached": ["Límite alcanzado", "بلغ الحد"], "Toggle light or dark mode": ["Cambiar modo claro u oscuro", "تبديل الوضع الفاتح أو الداكن"],
   "Data": ["Datos", "البيانات"], "Account": ["Cuenta", "الحساب"],
+  "Bills": ["Facturas", "الفواتير"], "Add bill": ["Añadir factura", "إضافة فاتورة"], "Electricity": ["Electricidad", "الكهرباء"], "Water": ["Agua", "الماء"], "Gas": ["Gas", "الغاز"], "Internet": ["Internet", "الإنترنت"], "Phone": ["Teléfono", "الهاتف"], "Tax": ["Impuestos", "الضرائب"], "Rent": ["Alquiler", "الإيجار"], "Other": ["Otro", "أخرى"],
+  "No bills yet": ["Aún no hay facturas", "لا توجد فواتير بعد"], "Tap Add to record your first bill.": ["Pulsa Añadir para registrar tu primera factura.", "اضغط إضافة لتسجيل أول فاتورة."], "No change": ["Sin cambios", "بلا تغيير"], "Latest": ["Última", "الأحدث"],
+  "vs previous month": ["vs mes anterior", "مقارنة بالشهر السابق"], "vs same month last year": ["vs mismo mes del año pasado", "مقارنة بنفس الشهر من العام الماضي"],
+  "Month": ["Mes", "الشهر"], "Amount": ["Importe", "المبلغ"], "Currency": ["Moneda", "العملة"], "Usage (optional)": ["Consumo (opcional)", "الاستهلاك (اختياري)"], "Invoice photo (optional)": ["Foto de la factura (opcional)", "صورة الفاتورة (اختياري)"], "Note (optional)": ["Nota (opcional)", "ملاحظة (اختياري)"],
+  "Average": ["Media", "المتوسط"], "Highest": ["Más alta", "الأعلى"], "Lowest": ["Más baja", "الأدنى"], "Invalid amount.": ["Importe no válido.", "المبلغ غير صالح."], "Could not save the bill.": ["No se pudo guardar la factura.", "تعذر حفظ الفاتورة."], "Delete this bill?": ["¿Eliminar esta factura?", "حذف هذه الفاتورة؟"], "Open invoice": ["Abrir factura", "فتح الفاتورة"],
+  "Choose files or take a photo": ["Elige archivos o haz una foto", "اختر ملفات أو التقط صورة"], "PDF, JPG, PNG or WEBP · up to 15 MB": ["PDF, JPG, PNG o WEBP · hasta 15 MB", "PDF أو JPG أو PNG أو WEBP · حتى 15 ميغابايت"], "Remove": ["Quitar", "إزالة"],
+  "ID": ["DNI", "هوية"], "Contract": ["Contrato", "عقد"], "Invoice": ["Factura", "فاتورة"], "Certificate": ["Certificado", "شهادة"], "Medical": ["Médico", "طبي"],
   "You are offline. Some features are unavailable.": ["Sin conexión. Algunas funciones no están disponibles.", "لا يوجد اتصال بالإنترنت. بعض الميزات غير متاحة."],
 };
 export function tr(l: Lang, s: string, v?: Record<string, string | number>) {
