@@ -75,6 +75,8 @@ const D: Record<string, [string, string]> = {
   "Choose a PIN": ["Elige un PIN", "اختر رمزاً سرياً"], "Confirm your PIN": ["Confirma tu PIN", "أكّد الرمز السري"], "Enter your PIN": ["Introduce tu PIN", "أدخل الرمز السري"], "Wrong PIN": ["PIN incorrecto", "الرمز غير صحيح"], "PINs do not match": ["Los PIN no coinciden", "الرمزان غير متطابقين"],
   "Too many attempts. Try again in {n}s.": ["Demasiados intentos. Inténtalo en {n} s.", "محاولات كثيرة. أعد المحاولة بعد {n} ثانية."], "Cancel": ["Cancelar", "إلغاء"], "Biometrics are not available on this device.": ["La biometría no está disponible en este dispositivo.", "البصمة غير متاحة على هذا الجهاز."], "Security": ["Seguridad", "الأمان"],
   "Use suggestion": ["Usar sugerencia", "استخدام الاقتراح"], "Unlock with biometrics": ["Desbloquear con biometría", "فتح بالبصمة"],
+  "Calculate 21% VAT on 480": ["Calcula el 21 % de IVA sobre 480", "احسب ضريبة القيمة المضافة 21% على 480"], "Explain income tax in simple words": ["Explica el impuesto sobre la renta con palabras sencillas", "اشرح ضريبة الدخل ببساطة"],
+  "How can I help you today?": ["¿En qué puedo ayudarte hoy?", "كيف أستطيع مساعدتك اليوم؟"], "Ask me anything…": ["Pregúntame lo que quieras…", "اسألني أي شيء…"], "AI can make mistakes. Check important information.": ["La IA puede equivocarse. Verifica la información importante.", "قد يخطئ الذكاء الاصطناعي. تحقق من المعلومات المهمة."],
   "You are offline. Some features are unavailable.": ["Sin conexión. Algunas funciones no están disponibles.", "لا يوجد اتصال بالإنترنت. بعض الميزات غير متاحة."],
 };
 export function tr(l: Lang, s: string, v?: Record<string, string | number>) {

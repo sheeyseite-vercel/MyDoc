@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { run, classify, ProviderError, _reset, type Provider } from "../lib/ai/router";
+import { run, runStream, classify, ProviderError, _reset, type Provider, type StreamEvent } from "../lib/ai/router";
 const ok = (id: string, caps: Provider["caps"] = ["chat"]): Provider => ({ id, model: "m", caps, call: async () => id });
 const bad = (id: string, kind: ProviderError["kind"]): Provider => ({ id, model: "m", caps: ["chat"], call: async () => { throw new ProviderError(kind); } });
 const fast = { timeoutMs: 1000, backoffMs: 1 };
@@ -13,4 +13,14 @@ describe("router", () => {
   it("skips providers lacking vision", async () => { const r = await run([ok("a"), ok("v", ["chat", "vision"])], "vision", { prompt: "x" }, fast); expect(r.provider).toBe("v"); });
   it("fails when no provider supports the task", async () => { await expect(run([ok("a")], "vision", { prompt: "x" }, fast)).rejects.toBeInstanceOf(ProviderError); });
   it("fails when all providers fail", async () => { await expect(run([bad("a", "quota"), bad("b", "quota")], "chat", { prompt: "x" }, fast)).rejects.toBeInstanceOf(ProviderError); });
+});
+
+const sp = (id: string, chunks: string[]): Provider => ({ id, model: "m", caps: ["chat"], call: async () => chunks.join(""), async *stream() { for (const c of chunks) yield c; } });
+const sf = (id: string, kind: ProviderError["kind"], st?: number): Provider => ({ id, model: "m", caps: ["chat"], call: async () => { throw new ProviderError(kind, st); }, async *stream() { throw new ProviderError(kind, st); } });
+const collect = async (chain: Provider[]) => { const o: StreamEvent[] = []; for await (const e of runStream(chain, "chat", { prompt: "x" }, fast)) o.push(e); return o; };
+describe("runStream", () => {
+  it("streams chunks then reports done", async () => { const o = await collect([sp("s1", ["he", "llo"])]); expect(o.map((e) => ("delta" in e ? e.delta : "|"))).toEqual(["he", "llo", "|"]); });
+  it("fails over before the first token", async () => { const o = await collect([sf("s2", "bad_request", 404), sp("s3", ["ok"])]); expect(o[0]).toEqual({ delta: "ok" }); expect(o[1]).toMatchObject({ done: { switched: true } }); });
+  it("treats 402 as quota and skips to the next provider", async () => { const o = await collect([sf("s4", "quota", 402), sp("s5", ["ok"])]); expect(o[0]).toEqual({ delta: "ok" }); });
+  it("does not switch after output started", async () => { const broken: Provider = { id: "s6", model: "m", caps: ["chat"], call: async () => "", async *stream() { yield "part"; throw new ProviderError("transient"); } }; await expect(collect([broken, sp("s7", ["x"])])).rejects.toBeInstanceOf(ProviderError); });
 });

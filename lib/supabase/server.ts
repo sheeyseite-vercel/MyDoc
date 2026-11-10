@@ -3,6 +3,6 @@ import { cookies } from "next/headers";
 export async function supabaseServer() {
   const store = await cookies();
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    cookies: { getAll: () => store.getAll(), setAll: (c) => c.forEach(({ name, value, options }) => store.set(name, value, options)) },
+    cookies: { getAll: () => store.getAll(), setAll: (c) => { try { c.forEach(({ name, value, options }) => store.set(name, value, options)); } catch { /* بعد بدء البث لا يمكن تعديل الكوكيز */ } } },
   });
 }

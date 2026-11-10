@@ -70,8 +70,20 @@ a:focus:not(:focus-visible),button:focus:not(:focus-visible){outline:none}.nv a:
 .keys{display:grid;grid-template-columns:repeat(3,76px);gap:14px}.keys button{width:76px;height:76px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--text);font:500 26px inherit;cursor:pointer}.keys button:active{background:var(--gold);color:var(--bg)}
 .sheet{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}.sheet>div{width:100%;max-width:480px;background:var(--bg);border-top:1px solid var(--line);border-radius:24px 24px 0 0;padding:20px 20px 28px;display:grid;gap:14px;max-height:88dvh;overflow:auto}
 html[data-lock="1"] body>*:not(.lockscreen){visibility:hidden}
-/* شارات الحالة: خلفية white smoke، نص ملوّن خفيف الدرجة، حد رفيع — واضحة في الوضعين */
-.chip.tr,.chip.ty,.chip.tg{background:#F5F5F5;font-weight:600;border-width:1px}
-.chip.tr{color:#B04A4D;border-color:#E6C9CA}
-.chip.ty{color:#8A6900;border-color:#E4D9AE}
-.chip.tg{color:#2D7A58;border-color:#BCDACC}
+
+
+/* شارات الحالة: خلفية بيضاء كالبطاقة، نص ملوّن خفيف، حد رفيع */
+[data-theme=light]{--c-red:#C0585B;--c-yellow:#A67F00;--c-green:#3E9170}
+.chip.tr,.chip.ty,.chip.tg{background:var(--surface);font-weight:600;border-width:1px}
+.chip.tr{color:var(--c-red);border-color:color-mix(in srgb,var(--c-red) 28%,var(--surface))}
+.chip.ty{color:var(--c-yellow);border-color:color-mix(in srgb,var(--c-yellow) 28%,var(--surface))}
+.chip.tg{color:var(--c-green);border-color:color-mix(in srgb,var(--c-green) 28%,var(--surface))}
+/* المساعد */
+.umsg{align-self:flex-end;max-width:85%;background:var(--surface);border:1px solid var(--line);border-radius:18px;border-end-end-radius:6px;padding:10px 14px;font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.amsg{font-size:15px;line-height:1.75;word-break:break-word}.amsg p{margin:0 0 10px}.amsg ul,.amsg ol{margin:0 0 10px;padding-inline-start:22px}.amsg li{margin-bottom:4px}
+.amsg code{background:var(--surface);border:1px solid var(--line);padding:1px 6px;border-radius:6px;font-size:13px}
+.caret{display:inline-block;width:7px;height:16px;background:var(--gold);margin-inline-start:2px;vertical-align:-2px;animation:blink 1s steps(2) infinite}@keyframes blink{50%{opacity:0}}
+.cbox{display:flex;align-items:flex-end;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:6px 6px 6px 16px;padding-inline:16px 6px}
+.cbox textarea{flex:1;border:0;outline:0;background:transparent;color:var(--text);font:inherit;font-size:15px;line-height:1.5;resize:none;max-height:120px;padding:10px 0;height:auto}
+.cbox .send{width:44px;height:44px}
+.send:disabled{opacity:.4;cursor:default}

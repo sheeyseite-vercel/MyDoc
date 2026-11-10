@@ -4,47 +4,75 @@ import Link from "next/link";
 import { useT } from "@/components/LangProvider";
 type Card = { id: string; title: string; category: string | null; expiry_date: string | null };
 type Msg = { role: "user" | "ai"; text: string; cards?: Card[] };
-const SUG = ["Where is my rental contract?", "Which documents expire this month?", "Show my ID documents"];
-const spark = <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" /></svg>;
+const SUG = ["Calculate 21% VAT on 480", "Explain income tax in simple words", "Which documents expire this month?", "Where is my rental contract?"];
+const ic = { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
+const clean = (s: string) => s.replace(/\s*\[\[[^\]]*\]*$/, "");
+function inline(s: string) {
+  return s.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((p, i) => p.length > 4 && p.startsWith("**") && p.endsWith("**") ? <strong key={i}>{p.slice(2, -2)}</strong> : p.length > 2 && p.startsWith("`") && p.endsWith("`") ? <code key={i}>{p.slice(1, -1)}</code> : p);
+}
+function Md({ text }: { text: string }) {
+  const out: React.ReactNode[] = []; const st: { list: { ord: boolean; items: string[] } | null } = { list: null };
+  const flush = () => { const l = st.list; if (l) { const Tag = l.ord ? "ol" : "ul"; out.push(<Tag key={out.length}>{l.items.map((x, i) => <li key={i}>{inline(x)}</li>)}</Tag>); st.list = null; } };
+  for (const line of text.split("\n")) {
+    const b = line.match(/^\s*[-*•]\s+(.*)/); const n = line.match(/^\s*\d+[.)]\s+(.*)/);
+    if (b || n) { const ord = !!n; if (!st.list || st.list.ord !== ord) { flush(); st.list = { ord, items: [] }; } st.list.items.push((b ?? n)![1]); }
+    else { flush(); if (line.trim()) out.push(<p key={out.length}>{inline(line.replace(/^#+\s*/, ""))}</p>); }
+  }
+  flush(); return <>{out}</>;
+}
 export default function Assistant() {
   const { t, lang } = useT(); const [msgs, setMsgs] = useState<Msg[]>([]); const [input, setInput] = useState(""); const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState(""); const [toast, setToast] = useState(""); const conv = useRef<string>(); const ctl = useRef<AbortController>(); const last = useRef(""); const end = useRef<HTMLDivElement>(null);
-  useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [msgs, busy, err]);
+  const [err, setErr] = useState(""); const [toast, setToast] = useState(""); const conv = useRef<string>(); const ctl = useRef<AbortController>(); const last = useRef(""); const end = useRef<HTMLDivElement>(null); const ta = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [msgs, err]);
+  useEffect(() => { const el = ta.current; if (el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; } }, [input]);
+  const upd = (f: (m: Msg) => Msg) => setMsgs((a) => a.map((x, i) => (i === a.length - 1 ? f(x) : x)));
+  function fail(code?: string) {
+    setErr(code === "consent_required" ? t("Turn on AI document analysis in Settings to use the assistant.") : code === "no_provider" || code === "config_error" ? t("The assistant is not set up yet: no valid AI provider.") : t("The assistant is unavailable right now. Try again later."));
+    setMsgs((a) => (a.length && a[a.length - 1].role === "ai" && !a[a.length - 1].text ? a.slice(0, -1) : a));
+  }
   async function send(text: string) {
     if (!text.trim() || busy) return; last.current = text; setErr(""); setToast(""); setBusy(true); setInput("");
-    setMsgs((m) => [...m, { role: "user", text }]); ctl.current = new AbortController();
+    const history = msgs.filter((m) => m.text).slice(-10).map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: clean(m.text) }));
+    setMsgs((a) => [...a, { role: "user", text }, { role: "ai", text: "" }]); ctl.current = new AbortController();
     try {
-      const r = await fetch("/api/ai/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, conversationId: conv.current }), signal: ctl.current.signal });
-      const j = await r.json().catch(() => ({}));
-      if (j.error === "consent_required") setErr(t("Turn on AI document analysis in Settings to use the assistant."));
-      else if (j.error === "no_provider" || j.error === "config_error") setErr(t("The assistant is not set up yet: no valid AI provider."));
-      else if (!r.ok) setErr(t("The assistant is unavailable right now. Try again later."));
-      else { conv.current = j.conversationId; if (j.switched) setToast(t("The current model hit its usage limit, so we switched to a backup model.")); setMsgs((m) => [...m, { role: "ai", text: j.answer, cards: j.cards }]); }
-    } catch (e) { if ((e as Error).name !== "AbortError") setErr(t("Connection lost.")); }
+      const r = await fetch("/api/ai/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, conversationId: conv.current, history }), signal: ctl.current.signal });
+      if (!r.ok || !r.body) { const j = await r.json().catch(() => ({})); fail(j.error); return; }
+      const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = "";
+      for (;;) {
+        const { done, value } = await reader.read(); if (done) break; buf += dec.decode(value, { stream: true }); let i: number;
+        while ((i = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (!line) continue;
+          const ev = JSON.parse(line);
+          if (ev.type === "meta") conv.current = ev.conversationId;
+          else if (ev.type === "delta") upd((m) => ({ ...m, text: m.text + ev.text }));
+          else if (ev.type === "cards") upd((m) => ({ ...m, cards: ev.cards }));
+          else if (ev.type === "done") { if (ev.switched) setToast(t("The current model hit its usage limit, so we switched to a backup model.")); }
+          else if (ev.type === "error") fail(ev.error);
+        }
+      }
+    } catch (e) { if ((e as Error).name !== "AbortError") { setErr(t("Connection lost.")); } }
     setBusy(false);
   }
-  const d = lang === "ar" ? "rtl" : "ltr";
+  const d = lang === "ar" ? "rtl" : "ltr"; const lastAi = msgs.length ? msgs[msgs.length - 1] : null;
   return (<main className="chat">
-    <header className="chat-h"><div style={{ display: "flex", gap: 10, alignItems: "center" }}><span className="ava">{spark}</span>
-      <div><div className="h" style={{ fontSize: 22, lineHeight: 1.2 }}>{t("Assistant")}</div><div className="m" style={{ fontSize: 12 }}>{t("Searches your vault")}</div></div></div>
-      <button className="chip g" style={{ background: "none", minHeight: 40 }} onClick={() => { setMsgs([]); conv.current = undefined; setErr(""); setToast(""); }}>{t("New chat")}</button></header>
+    <header className="chat-h"><h1 className="h" style={{ fontSize: 28, margin: 0 }}>{t("Assistant")}</h1>
+      <button className="ib" aria-label={t("New chat")} onClick={() => { ctl.current?.abort(); setMsgs([]); conv.current = undefined; setErr(""); setToast(""); setBusy(false); }}><svg {...ic}><path d="M12 5v14M5 12h14" /></svg></button></header>
     <div className="msgs" aria-live="polite">
       {!msgs.length && <div style={{ display: "grid", gap: 10, margin: "auto 0" }}>
-        <div style={{ textAlign: "center", display: "grid", gap: 8, justifyItems: "center", marginBottom: 8 }}><span className="ava" style={{ width: 60, height: 60 }}>{spark}</span><div className="h" style={{ fontSize: 24 }}>{t("Ask about your documents")}</div></div>
+        <div className="h" style={{ fontSize: 30, lineHeight: 1.25, marginBottom: 10 }}>{t("How can I help you today?")}</div>
         {SUG.map((s) => <button key={s} className="sug" onClick={() => send(t(s))}>{t(s)}</button>)}</div>}
-      {msgs.map((m, i) => (<div key={i} style={{ display: "grid", gap: 8 }}>
-        <div className={`bub ${m.role === "user" ? "me" : "ai"}`}>{m.text}</div>
-        {m.role === "ai" && <button className="chip m" style={{ background: "none", justifySelf: "start", minHeight: 34 }} onClick={() => navigator.clipboard?.writeText(m.text)}>{t("Copy")}</button>}
-        {m.cards?.map((c) => (<div key={c.id} className="k" style={{ borderColor: "var(--gold)", maxWidth: "88%" }}><b>{c.title}</b><div className="m" style={{ fontSize: 12 }}>{[c.category, c.expiry_date].filter(Boolean).join(" • ")}</div>
+      {msgs.map((m, i) => m.role === "user" ? <div key={i} className="umsg">{m.text}</div> : (<div key={i} style={{ display: "grid", gap: 8 }}>
+        {m.text ? <div className="amsg"><Md text={clean(m.text)} />{busy && i === msgs.length - 1 && <span className="caret" />}</div> : busy && i === msgs.length - 1 ? <div className="typing" role="status" aria-label={t("Thinking…")}><i /><i /><i /></div> : null}
+        {!!m.text && !(busy && i === msgs.length - 1) && <button className="chip m" style={{ background: "none", justifySelf: "start", minHeight: 32 }} onClick={() => navigator.clipboard?.writeText(clean(m.text))}>{t("Copy")}</button>}
+        {m.cards?.map((c) => (<div key={c.id} className="k" style={{ borderColor: "var(--gold)" }}><b>{c.title}</b><div className="m" style={{ fontSize: 12 }}>{[c.category, c.expiry_date].filter(Boolean).join(" • ")}</div>
           <Link href={`/documents/${c.id}`} className="btn" style={{ height: 44, marginTop: 10 }}>{t("Open document")}</Link></div>))}</div>))}
-      {busy && <div className="bub ai typing" role="status" aria-label={t("Thinking…")}><i /><i /><i /></div>}
       {toast && <div className="toast" role="status">{toast}</div>}
-      {err && <div className="err" role="alert">{err} {last.current && !err.includes("Settings") && !err.includes("Ajustes") && !err.includes("الإعدادات") && <button className="chip g" style={{ background: "none" }} onClick={() => send(last.current)}>{t("Retry")}</button>}</div>}
+      {err && <div className="err" role="alert">{err} {last.current && !err.includes("Settings") && !err.includes("Ajustes") && !err.includes("الإعدادات") && <button className="chip g" style={{ background: "none" }} onClick={() => { setMsgs((a) => (a.length && a[a.length - 1].role === "ai" && !a[a.length - 1].text ? a.slice(0, -2) : a)); send(last.current); }}>{t("Retry")}</button>}</div>}
       <div ref={end} /></div>
-    <div className="m" style={{ fontSize: 11, textAlign: "center" }}>{t("Summaries are for help only; the original document is the reference.")}</div>
-    <form className="composer" onSubmit={(e) => { e.preventDefault(); send(input); }}>
-      <input aria-label={t("Ask about your documents…")} placeholder={t("Ask about your documents…")} dir={d} value={input} onChange={(e) => setInput(e.target.value)} />
-      {busy ? <button type="button" className="send stop" aria-label={t("Stop")} onClick={() => ctl.current?.abort()}><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg></button>
-        : <button className="send" aria-label={t("Send")}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" /></svg></button>}
-    </form></main>);
+    <form className="composer" style={{ flexDirection: "column", gap: 6 }} onSubmit={(e) => { e.preventDefault(); send(input); }}>
+      <div className="cbox"><textarea ref={ta} rows={1} aria-label={t("Ask me anything…")} placeholder={t("Ask me anything…")} dir={d} value={input} enterKeyHint="send" onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }} />
+        {busy ? <button type="button" className="send stop" aria-label={t("Stop")} onClick={() => ctl.current?.abort()}><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg></button>
+          : <button className="send" aria-label={t("Send")} disabled={!input.trim()}><svg {...ic}><path d="M12 19V5M5 12l7-7 7 7" /></svg></button>}</div>
+      <div className="m" style={{ fontSize: 11, textAlign: "center" }}>{t("AI can make mistakes. Check important information.")}</div></form>
+  </main>);
 }
