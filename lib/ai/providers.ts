@@ -10,7 +10,7 @@ function openai(id: string, base: string, keyEnv: string, model: string, caps: C
   } };
 }
 function gemini(): Provider | null {
-  const key = process.env.GEMINI_API_KEY; const model = process.env.GEMINI_MODEL ?? "gemini-2.0-flash"; if (!key) return null;
+  const key = process.env.GEMINI_API_KEY; const model = process.env.GEMINI_MODEL ?? "gemini-flash-latest"; if (!key) return null;
   return { id: "gemini", model, caps: ["chat", "vision", "longContext"], async call(i, signal) {
     const parts: unknown[] = [{ text: i.prompt }]; if (i.image) parts.push({ inline_data: { mime_type: i.image.mime, data: i.image.b64 } });
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: "POST", signal,

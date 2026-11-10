@@ -28,14 +28,16 @@ export async function POST(req: Request) {
   if (!chain.length) return NextResponse.json({ error: "no_provider" }, { status: 503 });
   let convId = body?.conversationId as string | undefined;
   if (!convId) { const { data: c } = await sb.from("ai_conversations").insert({ user_id: user.id, title: message.slice(0, 60) }).select("id").single(); convId = c?.id; }
+  const fl: { provider: string; model: string; error_kind: string }[] = [];
   try {
-    const r = await run(chain, "chat", { system: SYSTEM, prompt: `الوثائق المتاحة:\n${ctx}\n\nسؤال المستخدم: ${message}` });
+    const r = await run(chain, "chat", { system: SYSTEM, prompt: `الوثائق المتاحة:\n${ctx}\n\nسؤال المستخدم: ${message}` }, { timeoutMs: 25000, backoffMs: 400, onError: (p, k, st) => { fl.push({ provider: p.id, model: p.model, error_kind: `${k}${st ? ":" + st : ""}` }); } });
+    if (fl.length) void sb.from("ai_usage_logs").insert(fl.map((f) => ({ user_id: user.id, status: "error", ...f })));
     await sb.from("ai_usage_logs").insert({ user_id: user.id, provider: r.provider, model: r.model, status: "ok" });
     if (convId) await sb.from("ai_messages").insert([{ user_id: user.id, conversation_id: convId, role: "user", content: message }, { user_id: user.id, conversation_id: convId, role: "assistant", content: r.text }]);
     return NextResponse.json({ answer: r.text, switched: r.switched, conversationId: convId, cards: docs.map(({ id, title, category, expiry_date }) => ({ id, title, category, expiry_date })) });
   } catch (e) {
     const kind = e instanceof ProviderError ? e.kind : "transient";
-    await sb.from("ai_usage_logs").insert({ user_id: user.id, status: "error", error_kind: kind });
+    await sb.from("ai_usage_logs").insert([{ user_id: user.id, status: "error", error_kind: kind }, ...fl.map((f) => ({ user_id: user.id, status: "error", ...f }))]);
     return NextResponse.json({ error: kind === "auth" ? "config_error" : "unavailable" }, { status: kind === "auth" ? 500 : 503 });
   }
 }
