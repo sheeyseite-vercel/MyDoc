@@ -23,3 +23,9 @@ export async function loadBills() {
   billsCache.items = (data ?? []).map((b) => ({ ...b, amount: Number(b.amount), usage: b.usage == null ? null : Number(b.usage) })) as Bill[];
   return billsCache.items;
 }
+export type Title = { id: string; title: string; category: string | null };
+export const titlesCache: { items?: Title[] } = {};
+export async function loadTitles() {
+  const { data, error } = await supabaseBrowser().from("documents").select("id,title,category").is("deleted_at", null).is("archived_at", null).order("created_at", { ascending: false }).limit(1000);
+  if (error) throw error; titlesCache.items = (data ?? []) as Title[]; return titlesCache.items;
+}

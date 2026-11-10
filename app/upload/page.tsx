@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { createReminders } from "@/lib/reminders";
 import { shrink, extOf } from "@/lib/image";
-import { docsCache } from "@/lib/data";
+import { docsCache, titlesCache } from "@/lib/data";
 import { useT } from "@/components/LangProvider";
 const OK = ["application/pdf", "image/jpeg", "image/png", "image/webp"]; const MAX = 15 * 1024 * 1024;
 const QUICK = ["ID", "Contract", "Invoice", "Certificate", "Medical", "Other"];
@@ -37,6 +37,7 @@ export default function Upload() {
     const failed = res.length - ok.length;
     ok.forEach((d) => { void createReminders(sb, uid, d.id, expiry); void sb.from("activity_logs").insert({ user_id: uid, action: "upload", document_id: d.id }); }); // دون انتظار
     const c = docsCache.get("all|"); if (c) docsCache.set("all|", [...ok.map((d) => ({ id: d.id, title: d.title, category: cat || null, issuer })), ...c]);
+    if (titlesCache.items) titlesCache.items = [...ok.map((d) => ({ id: d.id, title: d.title, category: cat || null })), ...titlesCache.items];
     setBusy(false);
     if (failed) return setMsg(t("Could not save {n} of the files. Try again.", { n: failed }));
     router.replace("/");

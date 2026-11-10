@@ -61,3 +61,12 @@ a:focus:not(:focus-visible),button:focus:not(:focus-visible){outline:none}.nv a:
 .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.bcard{display:grid;gap:6px;align-content:start;min-height:132px}
 .catpick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.catpick button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:11px;cursor:pointer}.catpick button.on{border-color:var(--gold);color:var(--gold);font-weight:600}
 [dir=rtl] .flip{transform:scaleX(-1)}
+.sugg{position:absolute;top:58px;left:0;right:0;z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:0 14px 34px rgba(0,0,0,.28);overflow:hidden}
+.sg{display:flex;align-items:center;padding:0 4px 0 14px}.sg+.sg{border-top:1px solid var(--line)}
+.sg a{flex:1;display:flex;align-items:center;gap:10px;min-height:50px;color:var(--text);text-decoration:none;min-width:0}.sg a span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sg b{color:var(--gold)}
+.sg button{width:44px;height:44px;background:none;border:0;color:var(--muted);cursor:pointer;flex:none;font-size:18px}
+.lockscreen{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;overflow:auto}
+.pad{display:grid;gap:22px;justify-items:center}.dots{display:flex;gap:16px}.dots i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--gold)}.dots i.f{background:var(--gold)}
+.keys{display:grid;grid-template-columns:repeat(3,76px);gap:14px}.keys button{width:76px;height:76px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--text);font:500 26px inherit;cursor:pointer}.keys button:active{background:var(--gold);color:var(--bg)}
+.sheet{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}.sheet>div{width:100%;max-width:480px;background:var(--bg);border-top:1px solid var(--line);border-radius:24px 24px 0 0;padding:20px 20px 28px;display:grid;gap:14px;max-height:88dvh;overflow:auto}
+html[data-lock="1"] body>*:not(.lockscreen){visibility:hidden}

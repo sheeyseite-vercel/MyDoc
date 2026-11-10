@@ -3,9 +3,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useT } from "@/components/LangProvider";
-import InstallButton from "@/components/InstallButton";
+import { useInstall } from "@/components/InstallProvider";
 export default function Login() {
-  const { t } = useT(); const [mode, setMode] = useState<"in" | "up">("in");
+  const { t } = useT(); const { installed, open } = useInstall(); const [mode, setMode] = useState<"in" | "up">("in");
   const [msg, setMsg] = useState(""); const [busy, setBusy] = useState(false); const router = useRouter();
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault(); setBusy(true); setMsg("");
@@ -24,6 +24,6 @@ export default function Login() {
       {msg && <div className="err" role="alert">{msg}</div>}
       <button className="btn" disabled={busy}>{mode === "in" ? t("Sign in") : t("Create account")}</button>
     </form>
-    <InstallButton /><button className="btn ghost" onClick={() => setMode(mode === "in" ? "up" : "in")}>{mode === "in" ? t("New account") : t("I have an account")}</button>
+    {!installed && <button type="button" className="btn ghost" onClick={open}>{t("Install app")}</button>}<button className="btn ghost" onClick={() => setMode(mode === "in" ? "up" : "in")}>{mode === "in" ? t("New account") : t("I have an account")}</button>
   </main>);
 }
