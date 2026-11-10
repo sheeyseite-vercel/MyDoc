@@ -4,23 +4,24 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { LANGS } from "@/lib/i18n";
-import { bioEnabled, bioEnroll, bioOff, bioSupported, disableLock, lockDelay, lockEnabled, setLockDelay, setPin } from "@/lib/applock";
+import { bioSupported, disableLock, enableBio, lockDelay, lockMode, setLockDelay, setPin, type LockMode } from "@/lib/applock";
 import { useT } from "@/components/LangProvider";
 import { useInstall } from "@/components/InstallProvider";
-import PinDialog from "@/components/PinDialog";
+import LockScreen from "@/components/LockScreen";
 const ic = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
 const chev = <svg {...ic} className="chev"><path d="M6 9l6 6 6-6" /></svg>; const arrow = <svg {...ic} className="chev" style={{ transform: "none" }}><path d="M9 6l6 6-6 6" /></svg>;
 const NAMES: Record<string, string> = { gemini: "Gemini", groq: "Groq", openrouter: "OpenRouter", nvidia: "NVIDIA", cloudflare: "Cloudflare", ollama: "Ollama", anyapi: "AnyAPI", opencode: "OpenCode", siliconflow: "SiliconFlow", sambanova: "SambaNova", huggingface: "Hugging Face" };
 type P = { id: string; configured: boolean; limited: boolean };
-type Dlg = null | "enable" | "disable" | "change-old" | "change-new";
+type Target = "pin" | "bio" | "off" | "change";
+type Dlg = null | { kind: "verify"; then: Target } | { kind: "set" };
 export default function Settings() {
   const { t, lang, setLang } = useT(); const router = useRouter(); const { installed, open: openInstall } = useInstall();
   const [consent, setConsent] = useState(false); const [provs, setProvs] = useState<P[]>([]); const [msg, setMsg] = useState("");
   const [theme, setTheme] = useState("dark"); const [openL, setOpenL] = useState(false); const [openP, setOpenP] = useState(false);
-  const [lockOn, setLockOn] = useState(false); const [delay, setDelay] = useState(60); const [bioOn, setBioOn] = useState(false); const [bioOk, setBioOk] = useState(false); const [dlg, setDlg] = useState<Dlg>(null);
+  const [mode, setMode] = useState<LockMode | null>(null); const [delay, setDelay] = useState(60); const [bioOk, setBioOk] = useState(false); const [dlg, setDlg] = useState<Dlg>(null); const [openS, setOpenS] = useState(false);
   useEffect(() => {
     const sb = supabaseBrowser(); setTheme(localStorage.getItem("theme") ?? "dark");
-    setLockOn(lockEnabled()); setDelay(lockDelay()); setBioOn(bioEnabled()); bioSupported().then(setBioOk);
+    setMode(lockMode()); setDelay(lockDelay()); bioSupported().then(setBioOk);
     sb.auth.getSession().then(({ data }) => data.session && sb.from("profiles").select("ai_consent").eq("id", data.session.user.id).single().then(({ data: p }) => setConsent(!!p?.ai_consent)));
     fetch("/api/ai/status").then((r) => r.json()).then((j) => setProvs(j.providers ?? [])).catch(() => {});
   }, []);
@@ -29,7 +30,13 @@ export default function Settings() {
   function flip() { const n = theme === "dark" ? "light" : "dark"; setTheme(n); localStorage.setItem("theme", n); document.documentElement.dataset.theme = n; }
   async function wipeChats() { if (!confirm(t("Delete all chats?"))) return; const { error } = await supabaseBrowser().from("ai_conversations").delete().not("id", "is", null); setMsg(error ? t("Could not delete.") : t("Chats deleted.")); }
   async function out() { await supabaseBrowser().auth.signOut(); router.replace("/login"); router.refresh(); }
-  async function toggleBio() { if (bioOn) { bioOff(); setBioOn(false); } else { const ok = await bioEnroll(); setBioOn(ok); if (!ok) setMsg(t("Biometrics are not available on this device.")); } }
+  async function apply(target: Target) {
+    setMsg("");
+    if (target === "off") { disableLock(); setMode(null); }
+    else if (target === "bio") { if (await enableBio()) { setMode("bio"); sessionStorage.setItem("lock.ok", "1"); } else setMsg(t("Biometrics are not available on this device.")); }
+    else setDlg({ kind: "set" });
+  }
+  function request(target: Target) { if (!mode) apply(target); else if (target !== mode) setDlg({ kind: "verify", then: target }); else if (target === "pin") return; }
   const cur = LANGS.find(([c]) => c === lang)?.[1];
   return (<main className="wrap">
     <div className="row"><h1 className="h" style={{ fontSize: 30, margin: 0 }}>{t("Settings")}</h1>
@@ -41,16 +48,17 @@ export default function Settings() {
       <button className="srow" onClick={() => setOpenL(!openL)} aria-expanded={openL}><span className="ico"><svg {...ic}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></svg></span><span style={{ flex: 1 }}>{t("Language")}</span><span className="m" style={{ fontSize: 14 }}>{cur}</span>{chev}</button>
       {openL && LANGS.map(([c, n]) => <button key={c} className="srow sub" onClick={() => { setLang(c); setOpenL(false); }}><span style={{ flex: 1 }}>{n}</span>{lang === c && <span className="g"><svg {...ic}><path d="M5 12l5 5 9-10" /></svg></span>}</button>)}</div>
     <div className="cap">{t("Security")}</div>
-    <div className="grp">
-      <div className="srow" style={{ cursor: "default" }}><span className="ico"><svg {...ic}><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" /></svg></span><span style={{ flex: 1 }}>{t("App lock")}</span>
-        <button className="sw" role="switch" aria-checked={lockOn} aria-label={t("App lock")} onClick={() => setDlg(lockOn ? "disable" : "enable")}><i /></button></div>
-      {lockOn && <>
+    <div className={`grp ${openS ? "open" : ""}`}>
+      <button className="srow" onClick={() => setOpenS(!openS)} aria-expanded={openS}><span className="ico"><svg {...ic}><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" /></svg></span><span style={{ flex: 1 }}>{t("App lock")}</span><span className="m" style={{ fontSize: 14 }}>{mode === "pin" ? t("PIN") : mode === "bio" ? t("Biometrics") : t("Off")}</span>{chev}</button>
+      {openS && ([[null, "Off", ""], ["bio", "Biometrics", "Unlock with fingerprint or face"], ["pin", "PIN", "4-digit code"]] as const).filter(([k]) => k !== "bio" || bioOk).map(([k, l, d]) => (
+        <button key={String(k)} className="srow sub" onClick={() => (k === null ? mode && request("off") : request(k))}><span style={{ flex: 1 }}><span style={{ display: "block" }}>{t(l)}</span>{d && <span className="m" style={{ display: "block", fontSize: 12 }}>{t(d)}</span>}</span>{mode === k && <span className="g"><svg {...ic}><path d="M5 12l5 5 9-10" /></svg></span>}</button>))}
+      {mode && <>
         <div className="srow sub" style={{ cursor: "default" }}><span style={{ flex: 1 }}>{t("Lock after")}</span>
           <div className="seg" style={{ flex: "none" }}>{([[0, "Immediately"], [60, "1 minute"], [300, "5 minutes"]] as const).map(([n, l]) => <button key={n} className={delay === n ? "on" : ""} style={{ padding: "0 10px", fontSize: 12 }} onClick={() => { setLockDelay(n); setDelay(n); }}>{t(l)}</button>)}</div></div>
-        {bioOk && <div className="srow sub" style={{ cursor: "default" }}><span style={{ flex: 1 }}>{t("Use biometrics")}</span><button className="sw" role="switch" aria-checked={bioOn} aria-label={t("Use biometrics")} onClick={toggleBio}><i /></button></div>}
-        <button className="srow sub" onClick={() => setDlg("change-old")}><span style={{ flex: 1 }}>{t("Change PIN")}</span>{arrow}</button>
+        {mode === "pin" && <button className="srow sub" onClick={() => request("change")}><span style={{ flex: 1 }}>{t("Change PIN")}</span>{arrow}</button>}
         <button className="srow sub" onClick={() => window.dispatchEvent(new Event("mydoc-lock"))}><span style={{ flex: 1 }}>{t("Lock now")}</span></button></>}</div>
-    <div className="cap">{t("Asks for a PIN when you open the app on this device. It protects the app on this device only and does not encrypt your data.")}</div>
+    {openS && !bioOk && <div className="cap">{t("Biometrics are not available on this device.")}</div>}
+    <div className="cap">{t("Locks the app on this device. It does not encrypt your data.")}</div>
     <div className="cap">{t("AI")}</div>
     <div className={`grp ${openP ? "open" : ""}`}>
       <div className="srow" style={{ cursor: "default" }}><span className="ico"><svg {...ic}><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" /></svg></span><span style={{ flex: 1 }}>{t("AI document analysis")}</span>
@@ -71,9 +79,7 @@ export default function Settings() {
     <div className="cap">{t("Account")}</div>
     <div className="grp"><button className="srow bad" onClick={out}><span className="ico bad"><svg {...ic}><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" /></svg></span><span style={{ flex: 1 }}>{t("Sign out")}</span></button></div>
     <div className="m" style={{ fontSize: 12, textAlign: "center", marginTop: 4 }}>MyDoc</div>
-    {dlg === "enable" && <PinDialog mode="set" onCancel={() => setDlg(null)} onSuccess={async (pin) => { await setPin(pin); sessionStorage.setItem("lock.ok", "1"); setLockOn(true); setDelay(lockDelay()); setDlg(null); }} />}
-    {dlg === "disable" && <PinDialog mode="verify" onCancel={() => setDlg(null)} onSuccess={() => { disableLock(); setLockOn(false); setBioOn(false); setDlg(null); }} />}
-    {dlg === "change-old" && <PinDialog mode="verify" onCancel={() => setDlg(null)} onSuccess={() => setDlg("change-new")} />}
-    {dlg === "change-new" && <PinDialog mode="set" onCancel={() => setDlg(null)} onSuccess={async (pin) => { await setPin(pin); setDlg(null); }} />}
+    {dlg?.kind === "verify" && <LockScreen mode="verify" method={mode === "bio" ? "bio" : "pin"} onCancel={() => setDlg(null)} onSuccess={() => { const nx = dlg.then; setDlg(null); apply(nx); }} />}
+    {dlg?.kind === "set" && <LockScreen mode="set" onCancel={() => setDlg(null)} onSuccess={async (pin) => { await setPin(pin); sessionStorage.setItem("lock.ok", "1"); setMode("pin"); setDelay(lockDelay()); setDlg(null); }} />}
   </main>);
 }

@@ -1,5 +1,5 @@
 // قفل التطبيق على هذا الجهاز فقط: رمز من 4 أرقام (PBKDF2) + بصمة اختيارية (WebAuthn). لا يشفّر البيانات.
-const K = { hash: "lock.hash", salt: "lock.salt", delay: "lock.delay", bio: "lock.bio", fails: "lock.fails", until: "lock.until", hiddenAt: "lock.hiddenAt" };
+const K = { mode: "lock.mode", hash: "lock.hash", salt: "lock.salt", delay: "lock.delay", bio: "lock.bio", fails: "lock.fails", until: "lock.until", hiddenAt: "lock.hiddenAt" };
 const enc = new TextEncoder();
 const b64 = (b: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(b)));
 const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
@@ -7,10 +7,12 @@ async function derive(pin: string, salt: Uint8Array) {
   const key = await crypto.subtle.importKey("raw", enc.encode(pin), "PBKDF2", false, ["deriveBits"]);
   return b64(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: salt as BufferSource, iterations: 150000 }, key, 256));
 }
-export const lockEnabled = () => { try { return !!localStorage.getItem(K.hash); } catch { return false; } };
+export type LockMode = "pin" | "bio";
+export const lockMode = (): LockMode | null => { try { const m = localStorage.getItem(K.mode); if (m === "pin" || m === "bio") return m; return localStorage.getItem(K.hash) ? "pin" : null; } catch { return null; } };
+export const lockEnabled = () => lockMode() !== null;
 export async function setPin(pin: string) {
   const salt = crypto.getRandomValues(new Uint8Array(16)); localStorage.setItem(K.salt, b64(salt.buffer as ArrayBuffer)); localStorage.setItem(K.hash, await derive(pin, salt));
-  localStorage.removeItem(K.fails); localStorage.removeItem(K.until); if (!localStorage.getItem(K.delay)) localStorage.setItem(K.delay, "60");
+  localStorage.removeItem(K.fails); localStorage.removeItem(K.until); localStorage.setItem(K.mode, "pin"); localStorage.removeItem(K.bio); if (!localStorage.getItem(K.delay)) localStorage.setItem(K.delay, "60");
 }
 export const lockedOutFor = () => Math.max(0, Number(localStorage.getItem(K.until) || 0) - Date.now());
 export async function verifyPin(pin: string) {
@@ -37,3 +39,7 @@ export async function bioVerify() {
   try { return !!(await navigator.credentials.get({ publicKey: { challenge: crypto.getRandomValues(new Uint8Array(32)), allowCredentials: [{ type: "public-key", id: unb64(id) as BufferSource }], userVerification: "required", timeout: 60000 } })); } catch { return false; }
 }
 export const hiddenKey = K.hiddenAt;
+export async function enableBio() {
+  if (!(await bioEnroll())) return false;
+  [K.hash, K.salt, K.fails, K.until].forEach((k) => localStorage.removeItem(k)); localStorage.setItem(K.mode, "bio"); if (!localStorage.getItem(K.delay)) localStorage.setItem(K.delay, "60"); return true;
+}

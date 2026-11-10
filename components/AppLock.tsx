@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import PinDialog from "./PinDialog";
-import { bioEnabled, hiddenKey, lockDelay, lockEnabled } from "@/lib/applock";
+import LockScreen from "./LockScreen";
+import { hiddenKey, lockDelay, lockEnabled, lockMode } from "@/lib/applock";
 export default function AppLock() {
   const [locked, setLocked] = useState(false);
   useEffect(() => {
@@ -17,5 +17,5 @@ export default function AppLock() {
     return () => { document.removeEventListener("visibilitychange", vis); document.removeEventListener("click", grace, true); window.removeEventListener("mydoc-lock", lock); };
   }, []);
   if (!locked) return null;
-  return <PinDialog mode="verify" cancelable={false} bio={bioEnabled()} onSuccess={() => { sessionStorage.setItem("lock.ok", "1"); document.documentElement.removeAttribute("data-lock"); setLocked(false); }} />;
+  return <LockScreen mode="verify" method={lockMode() === "bio" ? "bio" : "pin"} cancelable={false} reset onSuccess={() => { sessionStorage.setItem("lock.ok", "1"); document.documentElement.removeAttribute("data-lock"); setLocked(false); }} />;
 }

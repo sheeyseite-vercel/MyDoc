@@ -77,6 +77,9 @@ const D: Record<string, [string, string]> = {
   "Use suggestion": ["Usar sugerencia", "استخدام الاقتراح"], "Unlock with biometrics": ["Desbloquear con biometría", "فتح بالبصمة"],
   "Calculate 21% VAT on 480": ["Calcula el 21 % de IVA sobre 480", "احسب ضريبة القيمة المضافة 21% على 480"], "Explain income tax in simple words": ["Explica el impuesto sobre la renta con palabras sencillas", "اشرح ضريبة الدخل ببساطة"],
   "How can I help you today?": ["¿En qué puedo ayudarte hoy?", "كيف أستطيع مساعدتك اليوم؟"], "Ask me anything…": ["Pregúntame lo que quieras…", "اسألني أي شيء…"], "AI can make mistakes. Check important information.": ["La IA puede equivocarse. Verifica la información importante.", "قد يخطئ الذكاء الاصطناعي. تحقق من المعلومات المهمة."],
+  "PIN": ["PIN", "رمز سري"], "Biometrics": ["Biometría", "البصمة"], "Off": ["Desactivado", "إيقاف"], "Unlock with fingerprint or face": ["Desbloquea con huella o rostro", "افتح بالبصمة أو الوجه"], "4-digit code": ["Código de 4 dígitos", "رمز من 4 أرقام"],
+  "Unlock MyDoc": ["Desbloquear MyDoc", "فتح MyDoc"], "Touch to unlock": ["Toca para desbloquear", "المس لفتح التطبيق"], "Can't unlock? Sign out": ["¿No puedes desbloquear? Cerrar sesión", "لا تستطيع الفتح؟ تسجيل الخروج"], "Sign out and reset the lock?": ["¿Cerrar sesión y restablecer el bloqueo?", "تسجيل الخروج وإعادة ضبط القفل؟"],
+  "Could not verify. Try again.": ["No se pudo verificar. Inténtalo de nuevo.", "تعذر التحقق. حاول مجدداً."], "Locks the app on this device. It does not encrypt your data.": ["Bloquea la app en este dispositivo. No cifra tus datos.", "يقفل التطبيق على هذا الجهاز ولا يشفّر بياناتك."],
   "You are offline. Some features are unavailable.": ["Sin conexión. Algunas funciones no están disponibles.", "لا يوجد اتصال بالإنترنت. بعض الميزات غير متاحة."],
 };
 export function tr(l: Lang, s: string, v?: Record<string, string | number>) {
