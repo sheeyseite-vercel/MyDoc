@@ -51,7 +51,7 @@ a:focus:not(:focus-visible),button:focus:not(:focus-visible){outline:none}.nv a:
 .dot{width:10px;height:10px;border-radius:50%;flex:none}.dot.on{background:#3DBE8B}.dot.off{background:#E0605E}
 .chev{color:var(--muted);transition:transform .15s;flex:none}.open .chev{transform:rotate(180deg)}
 :root{--c-red:#EE9A9A;--c-yellow:#E6CB7A;--c-green:#8FD3B6}
-[data-theme=light]{--bg:#F3F5F2;--surface:#FFFFFF;--line:#DCE3DE;--gold:#2F6F6A;--text:#1C2B29;--muted:#5A6B67;--danger:#B3474A;--ok:#2D7A58;--c-red:#B3474A;--c-yellow:#8F6D00;--c-green:#2D7A58}
+[data-theme=light]{--bg:#F3F5F2;--surface:#FFFFFF;--line:#DCE3DE;--gold:#E8590C;--text:#1C2B29;--muted:#5A6B67;--danger:#B3474A;--ok:#2D7A58;--c-red:#B3474A;--c-yellow:#8F6D00;--c-green:#2D7A58}
 .tr{color:var(--c-red)}.ty{color:var(--c-yellow)}.tg{color:var(--c-green)}
 .chip.tr,.chip.ty,.chip.tg{border-color:color-mix(in srgb,currentColor 35%,transparent);background:color-mix(in srgb,currentColor 12%,transparent)}
 .drop{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:26px 20px;border:1.5px dashed var(--gold);border-radius:24px;background:var(--surface);cursor:pointer;color:var(--text);font-size:15px}.drop input{display:none}
