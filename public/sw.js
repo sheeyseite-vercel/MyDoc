@@ -1,5 +1,5 @@
 // يعمل بدون إنترنت: صفحات التطبيق وملفاته الثابتة تُخزَّن، ولا يُخزَّن شيء من /api (المساعد يحتاج إنترنت).
-const V = "v4"; const SHELL = "mydoc-shell-" + V; const ASSETS = "mydoc-assets-v1";
+const V = "v5"; const SHELL = "mydoc-shell-" + V; const ASSETS = "mydoc-assets-v1";
 const PRE = ["/offline.html", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 self.addEventListener("install", (e) => { self.skipWaiting(); e.waitUntil(caches.open(SHELL).then((c) => c.addAll(PRE))); });
 self.addEventListener("activate", (e) => e.waitUntil((async () => { for (const k of await caches.keys()) if (k.startsWith("mydoc-shell-") && k !== SHELL) await caches.delete(k); await self.clients.claim(); })()));
