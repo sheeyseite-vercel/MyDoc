@@ -94,3 +94,5 @@ html[data-lock="1"] body>*:not(.lockscreen){visibility:hidden}
 @keyframes shk{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 .keys{display:grid;grid-template-columns:repeat(3,74px);gap:16px 24px}.keys button{width:74px;height:74px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--text);font:500 28px inherit;cursor:pointer}
 .keys button:active{background:color-mix(in srgb,var(--gold) 14%,var(--surface));border-color:var(--gold)}.keys .del{border:0;background:transparent;color:var(--muted)}
+.viewer{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;padding:12px}.viewer img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
+.viewer{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;padding:12px}.viewer img{max-width:100%;max-height:100%;border-radius:8px}

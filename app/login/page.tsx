@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useT } from "@/components/LangProvider";
 import { useInstall } from "@/components/InstallProvider";
+import { getUid } from "@/lib/data";
 export default function Login() {
   const { t } = useT(); const { installed, open } = useInstall(); const [mode, setMode] = useState<"in" | "up">("in");
   const [msg, setMsg] = useState(""); const [busy, setBusy] = useState(false); const router = useRouter();
@@ -14,7 +15,7 @@ export default function Login() {
     setBusy(false);
     if (error) return setMsg(t("Could not complete the request. Check your details and try again."));
     if (mode === "up") return setMsg(t("Account created. Check your email to confirm it if confirmation is enabled."));
-    router.replace("/"); router.refresh();
+    await getUid(); router.replace("/"); router.refresh();
   }
   return (<main className="wrap" style={{ justifyContent: "center" }}>
     <h1 className="h g" style={{ fontSize: 40, margin: 0 }}>MyDoc</h1><p className="m" style={{ marginTop: 0 }}>{t("Your smart document vault")}</p>

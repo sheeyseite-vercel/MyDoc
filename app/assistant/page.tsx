@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useT } from "@/components/LangProvider";
+import { useOnline } from "@/lib/useOnline";
 type Card = { id: string; title: string; category: string | null; expiry_date: string | null };
 type Msg = { role: "user" | "ai"; text: string; cards?: Card[] };
 const SUG = ["Calculate 21% VAT on 480", "Explain income tax in simple words", "Which documents expire this month?", "Where is my rental contract?"];
@@ -21,7 +22,7 @@ function Md({ text }: { text: string }) {
   flush(); return <>{out}</>;
 }
 export default function Assistant() {
-  const { t, lang } = useT(); const [msgs, setMsgs] = useState<Msg[]>([]); const [input, setInput] = useState(""); const [busy, setBusy] = useState(false);
+  const { t, lang } = useT(); const online = useOnline(); const [msgs, setMsgs] = useState<Msg[]>([]); const [input, setInput] = useState(""); const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(""); const [toast, setToast] = useState(""); const conv = useRef<string>(); const ctl = useRef<AbortController>(); const last = useRef(""); const end = useRef<HTMLDivElement>(null); const ta = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [msgs, err]);
   useEffect(() => { const el = ta.current; if (el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; } }, [input]);
@@ -31,7 +32,7 @@ export default function Assistant() {
     setMsgs((a) => (a.length && a[a.length - 1].role === "ai" && !a[a.length - 1].text ? a.slice(0, -1) : a));
   }
   async function send(text: string) {
-    if (!text.trim() || busy) return; last.current = text; setErr(""); setToast(""); setBusy(true); setInput("");
+    if (!text.trim() || busy || !navigator.onLine) return; last.current = text; setErr(""); setToast(""); setBusy(true); setInput("");
     const history = msgs.filter((m) => m.text).slice(-10).map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: clean(m.text) }));
     setMsgs((a) => [...a, { role: "user", text }, { role: "ai", text: "" }]); ctl.current = new AbortController();
     try {
@@ -65,14 +66,15 @@ export default function Assistant() {
         {m.text ? <div className="amsg"><Md text={clean(m.text)} />{busy && i === msgs.length - 1 && <span className="caret" />}</div> : busy && i === msgs.length - 1 ? <div className="typing" role="status" aria-label={t("Thinking…")}><i /><i /><i /></div> : null}
         {!!m.text && !(busy && i === msgs.length - 1) && <button className="chip m" style={{ background: "none", justifySelf: "start", minHeight: 32 }} onClick={() => navigator.clipboard?.writeText(clean(m.text))}>{t("Copy")}</button>}
         {m.cards?.map((c) => (<div key={c.id} className="k" style={{ borderColor: "var(--gold)" }}><b>{c.title}</b><div className="m" style={{ fontSize: 12 }}>{[c.category, c.expiry_date].filter(Boolean).join(" • ")}</div>
-          <Link href={`/documents/${c.id}`} className="btn" style={{ height: 44, marginTop: 10 }}>{t("Open document")}</Link></div>))}</div>))}
+          <Link href={`/doc?id=${c.id}`} className="btn" style={{ height: 44, marginTop: 10 }}>{t("Open document")}</Link></div>))}</div>))}
+      {!online && <div className="toast" role="status">{t("The assistant needs an internet connection.")}</div>}
       {toast && <div className="toast" role="status">{toast}</div>}
       {err && <div className="err" role="alert">{err} {last.current && !err.includes("Settings") && !err.includes("Ajustes") && !err.includes("الإعدادات") && <button className="chip g" style={{ background: "none" }} onClick={() => { setMsgs((a) => (a.length && a[a.length - 1].role === "ai" && !a[a.length - 1].text ? a.slice(0, -2) : a)); send(last.current); }}>{t("Retry")}</button>}</div>}
       <div ref={end} /></div>
     <form className="composer" style={{ flexDirection: "column", gap: 6 }} onSubmit={(e) => { e.preventDefault(); send(input); }}>
-      <div className="cbox"><textarea ref={ta} rows={1} aria-label={t("Ask me anything…")} placeholder={t("Ask me anything…")} dir={d} value={input} enterKeyHint="send" onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }} />
+      <div className="cbox"><textarea ref={ta} rows={1} disabled={!online} aria-label={t("Ask me anything…")} placeholder={t("Ask me anything…")} dir={d} value={input} enterKeyHint="send" onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }} />
         {busy ? <button type="button" className="send stop" aria-label={t("Stop")} onClick={() => ctl.current?.abort()}><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg></button>
-          : <button className="send" aria-label={t("Send")} disabled={!input.trim()}><svg {...ic}><path d="M12 19V5M5 12l7-7 7 7" /></svg></button>}</div>
+          : <button className="send" aria-label={t("Send")} disabled={!input.trim() || !online}><svg {...ic}><path d="M12 19V5M5 12l7-7 7 7" /></svg></button>}</div>
       <div className="m" style={{ fontSize: 11, textAlign: "center" }}>{t("AI can make mistakes. Check important information.")}</div></form>
   </main>);
 }

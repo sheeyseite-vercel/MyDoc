@@ -1,11 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase/client";
-import { createReminders } from "@/lib/reminders";
 import { shrink, extOf } from "@/lib/image";
-import { docsCache, titlesCache } from "@/lib/data";
+import { enqueueDoc, getUid, useStore } from "@/lib/data";
 import { useT } from "@/components/LangProvider";
 const OK = ["application/pdf", "image/jpeg", "image/png", "image/webp"]; const MAX = 15 * 1024 * 1024;
 const QUICK = ["ID", "Contract", "Invoice", "Certificate", "Medical", "Other"];
@@ -13,8 +11,7 @@ const ic = { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: 
 const kb = (n: number) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 export default function Upload() {
   const { t } = useT(); const router = useRouter(); const [files, setFiles] = useState<File[]>([]); const [msg, setMsg] = useState(""); const [busy, setBusy] = useState(false);
-  const [folders, setFolders] = useState<{ id: string; name: string }[]>([]); const [cat, setCat] = useState("");
-  useEffect(() => { supabaseBrowser().from("folders").select("id,name").order("name").then(({ data }) => setFolders(data ?? [])); }, []);
+  const folders = useStore().folders ?? []; const [cat, setCat] = useState("");
   function pick(list: FileList | null) {
     setMsg(""); const arr = Array.from(list ?? []); const bad = arr.find((f) => !OK.includes(f.type) || f.size > MAX);
     if (bad) return setMsg(t("File “{name}” is not accepted. Allowed: PDF, JPG, PNG, WEBP up to 15 MB.", { name: bad.name }));
@@ -22,25 +19,12 @@ export default function Upload() {
   }
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault(); if (!files.length) return setMsg(t("Pick a file first.")); setBusy(true); setMsg("");
-    const f = new FormData(e.currentTarget); const sb = supabaseBrowser();
-    const { data: { session } } = await sb.auth.getSession(); if (!session) return router.replace("/login");
-    const uid = session.user.id; const expiry = String(f.get("expiry")) || null; const issuer = String(f.get("issuer")) || null; const folder = String(f.get("folder")) || null; const name = String(f.get("title")).trim();
-    const jobs = files.map(async (orig) => {
-      const file = await shrink(orig); const id = crypto.randomUUID(); const path = `${uid}/${id}.${extOf(file)}`; const title = files.length === 1 && name ? name : orig.name;
-      const [up, ins] = await Promise.all([ // الرفع والإدخال بالتوازي
-        sb.storage.from("documents").upload(path, file, { contentType: file.type }),
-        sb.from("documents").insert({ id, user_id: uid, title, category: cat || null, issuer, expiry_date: expiry, folder_id: folder, storage_path: path, mime: file.type, size_bytes: file.size, status: "ready" })]);
-      if (up.error || ins.error) { if (!ins.error) await sb.from("documents").delete().eq("id", id); if (!up.error) await sb.storage.from("documents").remove([path]); throw new Error("fail"); }
-      return { id, title };
-    });
-    const res = await Promise.allSettled(jobs); const ok = res.filter((r): r is PromiseFulfilledResult<{ id: string; title: string }> => r.status === "fulfilled").map((r) => r.value);
-    const failed = res.length - ok.length;
-    ok.forEach((d) => { void createReminders(sb, uid, d.id, expiry); void sb.from("activity_logs").insert({ user_id: uid, action: "upload", document_id: d.id }); }); // دون انتظار
-    const c = docsCache.get("all|"); if (c) docsCache.set("all|", [...ok.map((d) => ({ id: d.id, title: d.title, category: cat || null, issuer })), ...c]);
-    if (titlesCache.items) titlesCache.items = [...ok.map((d) => ({ id: d.id, title: d.title, category: cat || null })), ...titlesCache.items];
-    setBusy(false);
-    if (failed) return setMsg(t("Could not save {n} of the files. Try again.", { n: failed }));
-    router.replace("/");
+    const f = new FormData(e.currentTarget); const uid = await getUid(); if (!uid) return router.replace("/login");
+    const expiry = String(f.get("expiry")) || null; const issuer = String(f.get("issuer")) || null; const folder = String(f.get("folder")) || null; const name = String(f.get("title")).trim();
+    try {
+      for (const orig of files) { const file = await shrink(orig); await enqueueDoc({ id: crypto.randomUUID(), uid, file, mime: file.type, size: file.size, meta: { title: files.length === 1 && name ? name : orig.name, category: cat || null, issuer, expiry_date: expiry, folder_id: folder } }); }
+      router.replace("/"); // الحفظ محلي فوري، والرفع يجري في الخلفية
+    } catch { setBusy(false); setMsg(t("Could not save {n} of the files. Try again.", { n: files.length })); }
   }
   return (<main className="wrap">
     <div className="row" style={{ justifyContent: "flex-start", gap: 12 }}><Link href="/" className="ib" aria-label={t("Home")}><svg {...ic} className="flip"><path d="M15 6l-6 6 6 6" /></svg></Link><h1 className="h" style={{ fontSize: 28, margin: 0 }}>{t("Add document")}</h1></div>

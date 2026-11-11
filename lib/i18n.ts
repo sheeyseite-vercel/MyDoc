@@ -80,6 +80,7 @@ const D: Record<string, [string, string]> = {
   "PIN": ["PIN", "رمز سري"], "Biometrics": ["Biometría", "البصمة"], "Off": ["Desactivado", "إيقاف"], "Unlock with fingerprint or face": ["Desbloquea con huella o rostro", "افتح بالبصمة أو الوجه"], "4-digit code": ["Código de 4 dígitos", "رمز من 4 أرقام"],
   "Unlock MyDoc": ["Desbloquear MyDoc", "فتح MyDoc"], "Touch to unlock": ["Toca para desbloquear", "المس لفتح التطبيق"], "Can't unlock? Sign out": ["¿No puedes desbloquear? Cerrar sesión", "لا تستطيع الفتح؟ تسجيل الخروج"], "Sign out and reset the lock?": ["¿Cerrar sesión y restablecer el bloqueo?", "تسجيل الخروج وإعادة ضبط القفل؟"],
   "Could not verify. Try again.": ["No se pudo verificar. Inténtalo de nuevo.", "تعذر التحقق. حاول مجدداً."], "Locks the app on this device. It does not encrypt your data.": ["Bloquea la app en este dispositivo. No cifra tus datos.", "يقفل التطبيق على هذا الجهاز ولا يشفّر بياناتك."],
+  "You are offline. Your changes will sync when the connection returns.": ["Sin conexión. Tus cambios se sincronizarán al volver la conexión.", "لا يوجد اتصال. ستُزامَن تغييراتك عند عودة الإنترنت."],
   "You are offline. Some features are unavailable.": ["Sin conexión. Algunas funciones no están disponibles.", "لا يوجد اتصال بالإنترنت. بعض الميزات غير متاحة."],
 };
 export function tr(l: Lang, s: string, v?: Record<string, string | number>) {
