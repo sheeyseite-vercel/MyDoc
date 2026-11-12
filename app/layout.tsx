@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import OfflineBar from "@/components/OfflineBar";
 import Nav from "@/components/Nav";
 import AppLock from "@/components/AppLock";
+import Onboarding from "@/components/Onboarding";
 import InstallProvider from "@/components/InstallProvider";
 import LangProvider from "@/components/LangProvider";
 export const metadata: Metadata = { title: "MyDoc", description: "Smart document vault", manifest: "/manifest.webmanifest", icons: { apple: "/icons/icon-192.png" } };
@@ -12,5 +13,5 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (<html lang="en" dir="ltr" suppressHydrationWarning><head>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet" />
     <script dangerouslySetInnerHTML={{ __html: boot }} />
-  </head><body><LangProvider><InstallProvider><OfflineBar />{children}<Nav /><AppLock /></InstallProvider></LangProvider></body></html>);
+  </head><body><LangProvider><InstallProvider><OfflineBar />{children}<Nav /><Onboarding /><AppLock /></InstallProvider></LangProvider></body></html>);
 }

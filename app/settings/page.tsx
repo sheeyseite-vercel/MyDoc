@@ -8,6 +8,8 @@ import { bioSupported, disableLock, enableBio, lockDelay, lockMode, setLockDelay
 import { useT } from "@/components/LangProvider";
 import { useInstall } from "@/components/InstallProvider";
 import { cacheAllFiles, clearOffline } from "@/lib/data";
+import { buildBackup } from "@/lib/backup";
+import { disablePush, enablePush, pushEnabled, syncPushLang } from "@/lib/push";
 import LockScreen from "@/components/LockScreen";
 const ic = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
 const chev = <svg {...ic} className="chev"><path d="M6 9l6 6 6-6" /></svg>; const arrow = <svg {...ic} className="chev" style={{ transform: "none" }}><path d="M9 6l6 6-6 6" /></svg>;
@@ -16,7 +18,7 @@ type P = { id: string; configured: boolean; limited: boolean };
 type Target = "pin" | "bio" | "off" | "change";
 type Dlg = null | { kind: "verify"; then: Target } | { kind: "set" };
 export default function Settings() {
-  const { t, lang, setLang } = useT(); const router = useRouter(); const [dl, setDl] = useState(""); const { installed, open: openInstall } = useInstall();
+  const { t, lang, setLang } = useT(); const router = useRouter(); const [dl, setDl] = useState(""); const [bk, setBk] = useState(""); const [pushOn, setPushOn] = useState(false); const { installed, open: openInstall } = useInstall();
   const [consent, setConsent] = useState(false); const [provs, setProvs] = useState<P[]>([]); const [msg, setMsg] = useState("");
   const [theme, setTheme] = useState("dark"); const [openL, setOpenL] = useState(false); const [openP, setOpenP] = useState(false);
   const [mode, setMode] = useState<LockMode | null>(null); const [delay, setDelay] = useState(60); const [bioOk, setBioOk] = useState(false); const [dlg, setDlg] = useState<Dlg>(null); const [openS, setOpenS] = useState(false);
@@ -31,6 +33,16 @@ export default function Settings() {
   function flip() { const n = theme === "dark" ? "light" : "dark"; setTheme(n); localStorage.setItem("theme", n); document.documentElement.dataset.theme = n; }
   async function wipeChats() { if (!confirm(t("Delete all chats?"))) return; const { error } = await supabaseBrowser().from("ai_conversations").delete().not("id", "is", null); setMsg(error ? t("Could not delete.") : t("Chats deleted.")); }
   async function out() { await supabaseBrowser().auth.signOut().catch(() => {}); await clearOffline(); router.replace("/login"); router.refresh(); }
+  useEffect(() => { void pushEnabled().then(setPushOn); }, []);
+  useEffect(() => { if (pushOn) void syncPushLang(lang); }, [lang, pushOn]);
+  async function togglePush() {
+    setMsg(""); if (pushOn) { await disablePush(); setPushOn(false); return; }
+    const r = await enablePush(lang); if (r === "ok") setPushOn(true); else setMsg(r === "denied" ? t("Notifications are blocked. Allow them in your browser settings.") : r === "unsupported" ? t("Notifications aren't supported here. On iPhone, install the app to the Home Screen first.") : t("Could not enable notifications."));
+  }
+  async function backup() {
+    if (!navigator.onLine) { setMsg(t("Needs an internet connection.")); return; } setBk("…");
+    try { const blob = await buildBackup((n, tot) => setBk(`${n}/${tot}`)); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `mydoc-backup-${new Date().toISOString().slice(0, 10)}.zip`; a.click(); setBk(t("Done")); } catch { setBk(""); setMsg(t("Could not create the backup.")); }
+  }
   async function downloadAll() { setDl("…"); await cacheAllFiles((n, tot) => setDl(`${n}/${tot}`)); setDl(t("Done")); }
   async function apply(target: Target) {
     setMsg("");
@@ -81,6 +93,10 @@ export default function Settings() {
     <div className="cap">{t("Offline")}</div>
     <div className="grp"><button className="srow" onClick={downloadAll} disabled={!!dl && dl !== t("Done")}><span className="ico"><svg {...ic}><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg></span><span style={{ flex: 1 }}>{t("Download all files for offline use")}</span><span className="m" style={{ fontSize: 12 }}>{dl}</span></button></div>
     <div className="cap">{t("Documents and bills you add offline are saved on this device and sync automatically when you're back online.")}</div>
+    <div className="grp"><button className="srow" onClick={backup} disabled={!!bk && bk !== t("Done")}><span className="ico"><svg {...ic}><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg></span><span style={{ flex: 1 }}>{t("Download full backup (ZIP)")}</span><span className="m" style={{ fontSize: 12 }}>{bk}</span></button></div>
+    <div className="cap">{t("Notifications")}</div>
+    <div className="grp"><div className="srow" style={{ cursor: "default" }}><span className="ico"><svg {...ic}><path d="M6 16v-5a6 6 0 0112 0v5l2 2H4zM10 21h4" /></svg></span><span style={{ flex: 1 }}>{t("Expiry reminders")}</span><button className="sw" role="switch" aria-checked={pushOn} aria-label={t("Expiry reminders")} onClick={togglePush}><i /></button></div></div>
+    <div className="cap">{t("Get a notification before your documents expire and when it's time to add a bill.")}</div>
     <div className="cap">{t("Account")}</div>
     <div className="grp"><button className="srow bad" onClick={out}><span className="ico bad"><svg {...ic}><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" /></svg></span><span style={{ flex: 1 }}>{t("Sign out")}</span></button></div>
     <div className="m" style={{ fontSize: 12, textAlign: "center", marginTop: 4 }}>MyDoc</div>

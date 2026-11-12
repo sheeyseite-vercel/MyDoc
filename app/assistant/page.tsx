@@ -28,6 +28,7 @@ export default function Assistant() {
   useEffect(() => { const el = ta.current; if (el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; } }, [input]);
   const upd = (f: (m: Msg) => Msg) => setMsgs((a) => a.map((x, i) => (i === a.length - 1 ? f(x) : x)));
   function fail(code?: string) {
+    if (code === "limit_reached") { setErr(t("Daily assistant limit reached. Try again tomorrow.")); setMsgs((a) => (a.length && a[a.length - 1].role === "ai" && !a[a.length - 1].text ? a.slice(0, -1) : a)); return; }
     setErr(code === "consent_required" ? t("Turn on AI document analysis in Settings to use the assistant.") : code === "no_provider" || code === "config_error" ? t("The assistant is not set up yet: no valid AI provider.") : t("The assistant is unavailable right now. Try again later."));
     setMsgs((a) => (a.length && a[a.length - 1].role === "ai" && !a[a.length - 1].text ? a.slice(0, -1) : a));
   }

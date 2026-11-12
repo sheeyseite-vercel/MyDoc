@@ -16,3 +16,6 @@ export function deltas(asc: Bill[]) {
   return m;
 }
 export const group = (items: Bill[]) => { const g = new Map<string, Bill[]>(); items.forEach((b) => g.set(b.category, [...(g.get(b.category) ?? []), b])); return g; };
+// حدّ تنبيه ارتفاع الفاتورة (نسبة مئوية، 0 = إيقاف)
+export const getAlertPct = () => { try { const v = localStorage.getItem("billAlertPct"); return v == null ? 10 : Math.max(0, Number(v) || 0); } catch { return 10; } };
+export const setAlertPct = (n: number) => { try { localStorage.setItem("billAlertPct", String(Math.max(0, Math.min(500, n)))); } catch { /* تجاهل */ } };

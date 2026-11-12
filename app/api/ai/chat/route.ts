@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { runStream, ProviderError, type ErrKind } from "@/lib/ai/router";
 import { buildChain } from "@/lib/ai/providers";
+import { DAILY_LIMIT, since24h } from "@/lib/ai/limit";
 export const maxDuration = 60;
 const STOP = new Set(["أين", "اين", "أرني", "ارني", "افتح", "ابحث", "عن", "لي", "ما", "هل", "التي", "الذي", "هذا", "هذه", "في", "من", "على", "كل", "جميع", "لخص", "الوثائق", "وثيقة", "وثائق", "where", "show", "find", "open", "the", "my", "what", "which", "how", "calculate", "explain", "with", "for", "and", "are", "this", "that", "month", "documents", "document"]);
 const SYSTEM = (today: string) => `You are MyDoc Assistant, a fast, accurate, friendly general-purpose AI assistant inside a personal document vault app. You can talk about ANY topic, not only the user's documents. Always reply in the same language the user writes in. Be concise by default (short paragraphs, bullet points when helpful) and go deeper only when asked.
@@ -26,9 +27,10 @@ export async function POST(req: Request) {
       /تنتهي|انتهاء|expire|vencen|caducan/i.test(message) ? sb.from("documents").select(sel).is("deleted_at", null).not("expiry_date", "is", null).lte("expiry_date", new Date(Date.now() + 31 * 864e5).toISOString().slice(0, 10)).limit(5) : Promise.resolve({ data: [] as Row[] })]);
     const out = [...((a.data ?? []) as Row[])]; ((b.data ?? []) as Row[]).forEach((d) => { if (!out.some((x) => x.id === d.id)) out.push(d); }); return out.slice(0, 6);
   };
-  const [u, prof, docs, sets] = await Promise.all([sb.auth.getUser(), sb.from("profiles").select("ai_consent").maybeSingle(), findDocs(), sb.from("ai_provider_settings").select("provider,priority,enabled")]);
+  const [u, prof, docs, sets, used] = await Promise.all([sb.auth.getUser(), sb.from("profiles").select("ai_consent").maybeSingle(), findDocs(), sb.from("ai_provider_settings").select("provider,priority,enabled"), sb.from("ai_usage_logs").select("id", { count: "exact", head: true }).eq("status", "ok").gte("created_at", since24h())]);
   const user = u.data.user; if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   if (!prof.data?.ai_consent) return NextResponse.json({ error: "consent_required" }, { status: 403 });
+  if ((used.count ?? 0) >= DAILY_LIMIT) return NextResponse.json({ error: "limit_reached" }, { status: 429 });
   const chain = buildChain(sets.data ?? []); if (!chain.length) return NextResponse.json({ error: "no_provider" }, { status: 503 });
   const ctx = docs.length ? docs.map((d, i) => `[${i + 1}] ${d.title} | category: ${d.category ?? "-"} | issuer: ${d.issuer ?? "-"} | expires: ${d.expiry_date ?? "-"} | excerpt: ${(d.ocr_text ?? "").slice(0, 400)}`).join("\n") : "(none matched)";
   const isNew = !body?.conversationId; const convId: string = body?.conversationId || crypto.randomUUID();

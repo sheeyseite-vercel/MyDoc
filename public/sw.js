@@ -38,3 +38,10 @@ async function warm(urls) {
     } catch {}
   }
 }
+
+// إشعارات الدفع (تذكير انتهاء الوثائق وموعد الفواتير)
+self.addEventListener("push", (e) => { let d = {}; try { d = e.data ? e.data.json() : {}; } catch (_) {} e.waitUntil(self.registration.showNotification(d.title || "MyDoc", { body: d.body || "", icon: "/icons/icon-192.png", badge: "/icons/icon-192.png", data: { url: d.url || "/" } })); });
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close(); const url = (e.notification.data && e.notification.data.url) || "/";
+  e.waitUntil((async () => { const all = await clients.matchAll({ type: "window", includeUncontrolled: true }); for (const c of all) { if ("focus" in c) { await c.focus(); if ("navigate" in c) { try { await c.navigate(url); } catch (_) {} } return; } } await clients.openWindow(url); })());
+});

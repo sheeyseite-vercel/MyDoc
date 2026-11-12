@@ -6,7 +6,7 @@ import { useT } from "./LangProvider";
 import { CATS } from "@/lib/bills";
 import { useStore } from "@/lib/data";
 const items = [["/", "Home"], ["/bills", "Bills"], ["/assistant", "Assistant"], ["/alerts", "Alerts"], ["/settings", "Settings"]] as const;
-const ROUTES = ["/", "/bills", "/alerts", "/settings", "/assistant", "/upload", "/folders", "/trash", "/bills/new", "/doc", ...CATS.map((c) => `/bills/${c[0]}`)];
+const ROUTES = ["/", "/bills", "/alerts", "/settings", "/assistant", "/upload", "/folders", "/trash", "/bills/new", "/bills/report", "/scan", "/doc", ...CATS.map((c) => `/bills/${c[0]}`)];
 export default function Nav() {
   const { t } = useT(); const path = usePathname(); const [pend, setPend] = useState<string | null>(null); const login = path.startsWith("/login");
   useStore(); // يبدأ تحميل البيانات المخزّنة فوراً

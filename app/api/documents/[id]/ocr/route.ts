@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { run, ProviderError } from "@/lib/ai/router";
 import { buildChain } from "@/lib/ai/providers";
+import { DAILY_LIMIT, since24h } from "@/lib/ai/limit";
 export const maxDuration = 60;
 const PROMPT = 'استخرج كل النص الظاهر في هذه الوثيقة، ثم أعد JSON فقط بلا أي نص آخر بالشكل: {"text":"...","fields":{"name":null,"issuer":null,"issue_date":null,"expiry_date":null,"reference_no":null}}. التواريخ بصيغة YYYY-MM-DD. استخدم null إذا لم تكن القيمة واضحة ولا تخمّن.';
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -9,6 +10,8 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { data: prof } = await sb.from("profiles").select("ai_consent").eq("id", user.id).single();
   if (!prof?.ai_consent) return NextResponse.json({ error: "consent_required" }, { status: 403 });
+  const { count: used } = await sb.from("ai_usage_logs").select("id", { count: "exact", head: true }).eq("status", "ok").gte("created_at", since24h());
+  if ((used ?? 0) >= DAILY_LIMIT) return NextResponse.json({ error: "limit_reached" }, { status: 429 });
   const { data: doc } = await sb.from("documents").select("id,storage_path,mime,size_bytes").eq("id", id).is("deleted_at", null).single();
   if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
   if (doc.size_bytes > 10 * 1024 * 1024) return NextResponse.json({ error: "too_large" }, { status: 413 });
@@ -18,6 +21,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     if (error || !blob) throw new ProviderError("transient");
     const b64 = Buffer.from(await blob.arrayBuffer()).toString("base64");
     const r = await run(buildChain(), "vision", { prompt: PROMPT, image: { mime: doc.mime, b64 } });
+    void sb.from("ai_usage_logs").insert({ user_id: user.id, provider: r.provider, model: r.model, status: "ok" });
     const parsed = JSON.parse(r.text.replace(/```json|```/g, "").trim());
     await sb.from("documents").update({ ocr_text: String(parsed.text ?? "").slice(0, 50000), status: "ready" }).eq("id", id);
     await sb.from("document_extracted_fields").delete().eq("document_id", id).eq("confirmed", false);
