@@ -138,6 +138,9 @@ const D: Record<string, [string, string]> = {
   "Next": ["Siguiente", "التالي"],
   "Skip": ["Omitir", "تخطي"],
   "Get started": ["Empezar", "ابدأ"],
+  "Prepare the app for offline use": ["Preparar la app para usarla sin conexión", "تجهيز التطبيق للعمل دون إنترنت"],
+  "Not ready yet. Open the app with internet, wait a few seconds and try again.": ["Aún no está lista. Abre la app con internet, espera unos segundos e inténtalo de nuevo.", "لم يجهز بعد. افتح التطبيق مع الإنترنت وانتظر ثوانٍ ثم أعد المحاولة."],
+  "Ready for offline use.": ["Lista para usar sin conexión.", "جاهز للعمل دون إنترنت."],
   "You are offline. Your changes will sync when the connection returns.": ["Sin conexión. Tus cambios se sincronizarán al volver la conexión.", "لا يوجد اتصال. ستُزامَن تغييراتك عند عودة الإنترنت."],
   "You are offline. Some features are unavailable.": ["Sin conexión. Algunas funciones no están disponibles.", "لا يوجد اتصال بالإنترنت. بعض الميزات غير متاحة."],
 };

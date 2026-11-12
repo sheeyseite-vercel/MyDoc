@@ -27,6 +27,7 @@ export const allDocs = (): DocRow[] => { const ids = new Set((S.docs ?? []).map(
 export const allBills = (): Bill[] => { const ids = new Set((S.bills ?? []).map((b) => b.id)); return [...S.outBills.filter((b) => !ids.has(b.id)), ...(S.bills ?? [])]; };
 
 export async function getUid(): Promise<string | null> {
+  if (!online()) return localStorage.getItem("mydoc.uid");
   try { const { data: { session } } = await sb().auth.getSession(); if (session) { const prev = localStorage.getItem("mydoc.uid"); if (prev && prev !== session.user.id) await clearOffline(); localStorage.setItem("mydoc.uid", session.user.id); return session.user.id; } } catch { /* دون اتصال */ }
   return localStorage.getItem("mydoc.uid");
 }
@@ -49,9 +50,11 @@ export const refreshAll = () => Promise.all([refreshDocs(), refreshBills(), refr
 let booted = false;
 async function boot() {
   if (booted) return;
-  let authed = false; try { authed = !!(await sb().auth.getSession()).data.session; } catch { /* دون اتصال */ }
-  if (!authed && !localStorage.getItem("mydoc.uid")) return; // لم يسجّل الدخول بعد
+  let authed = !!localStorage.getItem("mydoc.uid") || /auth-token/.test(document.cookie); // دون انتظار الشبكة
+  if (!authed && online()) { try { authed = !!(await sb().auth.getSession()).data.session; } catch { /* تجاهل */ } }
+  if (!authed) return; // لم يسجّل الدخول بعد
   if (booted) return; booted = true;
+  if (online()) void getUid(); // يحفظ معرّف المستخدم لاستخدامه دون إنترنت
   const [d, b, f, du] = await Promise.all([kvGet<DocRow[]>("docs"), kvGet<Bill[]>("bills"), kvGet<Folder[]>("folders"), kvGet<Due[]>("due")]);
   if (d) S.docs = d; if (b) S.bills = b; if (f) S.folders = f; if (du) S.due = du;
   await loadOutbox(); emit();

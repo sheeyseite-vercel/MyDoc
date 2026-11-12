@@ -9,6 +9,7 @@ import { useT } from "@/components/LangProvider";
 import { useInstall } from "@/components/InstallProvider";
 import { cacheAllFiles, clearOffline } from "@/lib/data";
 import { buildBackup } from "@/lib/backup";
+import { offlineStatus, prepareOffline } from "@/lib/offlineStatus";
 import { disablePush, enablePush, pushEnabled, syncPushLang } from "@/lib/push";
 import LockScreen from "@/components/LockScreen";
 const ic = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
@@ -18,7 +19,7 @@ type P = { id: string; configured: boolean; limited: boolean };
 type Target = "pin" | "bio" | "off" | "change";
 type Dlg = null | { kind: "verify"; then: Target } | { kind: "set" };
 export default function Settings() {
-  const { t, lang, setLang } = useT(); const router = useRouter(); const [dl, setDl] = useState(""); const [bk, setBk] = useState(""); const [pushOn, setPushOn] = useState(false); const { installed, open: openInstall } = useInstall();
+  const { t, lang, setLang } = useT(); const router = useRouter(); const [dl, setDl] = useState(""); const [bk, setBk] = useState(""); const [rd, setRd] = useState(""); const [pushOn, setPushOn] = useState(false); const { installed, open: openInstall } = useInstall();
   const [consent, setConsent] = useState(false); const [provs, setProvs] = useState<P[]>([]); const [msg, setMsg] = useState("");
   const [theme, setTheme] = useState("dark"); const [openL, setOpenL] = useState(false); const [openP, setOpenP] = useState(false);
   const [mode, setMode] = useState<LockMode | null>(null); const [delay, setDelay] = useState(60); const [bioOk, setBioOk] = useState(false); const [dlg, setDlg] = useState<Dlg>(null); const [openS, setOpenS] = useState(false);
@@ -33,7 +34,9 @@ export default function Settings() {
   function flip() { const n = theme === "dark" ? "light" : "dark"; setTheme(n); localStorage.setItem("theme", n); document.documentElement.dataset.theme = n; }
   async function wipeChats() { if (!confirm(t("Delete all chats?"))) return; const { error } = await supabaseBrowser().from("ai_conversations").delete().not("id", "is", null); setMsg(error ? t("Could not delete.") : t("Chats deleted.")); }
   async function out() { await supabaseBrowser().auth.signOut().catch(() => {}); await clearOffline(); router.replace("/login"); router.refresh(); }
-  useEffect(() => { void pushEnabled().then(setPushOn); }, []);
+  const fmt = (r: { pages: number; total: number } | null) => (r ? `${r.pages}/${r.total}` : "—");
+  useEffect(() => { void pushEnabled().then(setPushOn); void offlineStatus().then((r) => setRd(fmt(r))); }, []);
+  async function prep() { setRd("…"); const r = await prepareOffline(); setRd(fmt(r)); if (!r || r.pages < r.total) setMsg(t("Not ready yet. Open the app with internet, wait a few seconds and try again.")); else setMsg(t("Ready for offline use.")); }
   useEffect(() => { if (pushOn) void syncPushLang(lang); }, [lang, pushOn]);
   async function togglePush() {
     setMsg(""); if (pushOn) { await disablePush(); setPushOn(false); return; }
@@ -91,7 +94,7 @@ export default function Settings() {
       {!installed && <button className="srow" onClick={openInstall}><span className="ico"><svg {...ic}><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg></span><span style={{ flex: 1 }}>{t("Install app")}</span>{arrow}</button>}</div>
     {msg && <div className="toast" role="status">{msg}</div>}
     <div className="cap">{t("Offline")}</div>
-    <div className="grp"><button className="srow" onClick={downloadAll} disabled={!!dl && dl !== t("Done")}><span className="ico"><svg {...ic}><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg></span><span style={{ flex: 1 }}>{t("Download all files for offline use")}</span><span className="m" style={{ fontSize: 12 }}>{dl}</span></button></div>
+    <div className="grp"><button className="srow" onClick={prep}><span className="ico"><svg {...ic}><path d="M5 12l5 5 9-10" /></svg></span><span style={{ flex: 1 }}>{t("Prepare the app for offline use")}</span><span className="m" style={{ fontSize: 12 }}>{rd}</span></button><button className="srow" onClick={downloadAll} disabled={!!dl && dl !== t("Done")}><span className="ico"><svg {...ic}><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg></span><span style={{ flex: 1 }}>{t("Download all files for offline use")}</span><span className="m" style={{ fontSize: 12 }}>{dl}</span></button></div>
     <div className="cap">{t("Documents and bills you add offline are saved on this device and sync automatically when you're back online.")}</div>
     <div className="grp"><button className="srow" onClick={backup} disabled={!!bk && bk !== t("Done")}><span className="ico"><svg {...ic}><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg></span><span style={{ flex: 1 }}>{t("Download full backup (ZIP)")}</span><span className="m" style={{ fontSize: 12 }}>{bk}</span></button></div>
     <div className="cap">{t("Notifications")}</div>
