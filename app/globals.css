@@ -102,7 +102,7 @@ html[data-lock="1"] body>*:not(.lockscreen){visibility:hidden}
 
 .nv{gap:2px;padding:8px 6px}.nv a.on{overflow:hidden}
 /* ثبات الواجهة: لا تكبير ولا تحريك جانبي ولا ارتداد عند نهاية التمرير */
-html,body{touch-action:pan-y;overscroll-behavior:none;overflow-x:hidden;max-width:100vw;-webkit-text-size-adjust:100%}
+html,body{touch-action:manipulation;overscroll-behavior:none;overflow-x:clip;-webkit-text-size-adjust:100%}
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 input,textarea,select,.amsg,.amsg *{-webkit-user-select:text;user-select:text}
 img{-webkit-user-drag:none;user-drag:none}

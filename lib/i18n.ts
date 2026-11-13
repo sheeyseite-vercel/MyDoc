@@ -149,6 +149,7 @@ const D: Record<string, [string, string]> = {
   "Notifications are working.": ["Las notificaciones funcionan.", "الإشعارات تعمل."],
   "This browser can't register for push messages. In Brave: Settings → Privacy → turn on “Use Google services for push messaging”, or open MyDoc in Chrome.": ["Este navegador no puede registrarse para notificaciones push. En Brave: Ajustes → Privacidad → activa «Usar servicios de Google para mensajes push», o abre MyDoc en Chrome.", "هذا المتصفح لا يستطيع تسجيل الإشعارات. في Brave: الإعدادات ← الخصوصية ← فعّل «Use Google services for push messaging»، أو افتح MyDoc في Chrome."],
   "Could not reach the server. Check your connection and try again.": ["No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.", "تعذر الوصول إلى الخادم. تحقق من الاتصال وحاول مجدداً."],
+  "Enabling…": ["Activando…", "جارٍ التفعيل…"],
   "You are offline. Your changes will sync when the connection returns.": ["Sin conexión. Tus cambios se sincronizarán al volver la conexión.", "لا يوجد اتصال. ستُزامَن تغييراتك عند عودة الإنترنت."],
   "You are offline. Some features are unavailable.": ["Sin conexión. Algunas funciones no están disponibles.", "لا يوجد اتصال بالإنترنت. بعض الميزات غير متاحة."],
 };

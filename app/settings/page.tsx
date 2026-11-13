@@ -19,7 +19,7 @@ type P = { id: string; configured: boolean; limited: boolean };
 type Target = "pin" | "bio" | "off" | "change";
 type Dlg = null | { kind: "verify"; then: Target } | { kind: "set" };
 export default function Settings() {
-  const { t, lang, setLang } = useT(); const router = useRouter(); const [dl, setDl] = useState(""); const [bk, setBk] = useState(""); const [rd, setRd] = useState(""); const [pushOn, setPushOn] = useState(false); const [pushMsg, setPushMsg] = useState(""); const { installed, open: openInstall } = useInstall();
+  const { t, lang, setLang } = useT(); const router = useRouter(); const [dl, setDl] = useState(""); const [bk, setBk] = useState(""); const [rd, setRd] = useState(""); const [pushOn, setPushOn] = useState(false); const [pushMsg, setPushMsg] = useState(""); const [pushBusy, setPushBusy] = useState(false); const { installed, open: openInstall } = useInstall();
   const [consent, setConsent] = useState(false); const [provs, setProvs] = useState<P[]>([]); const [msg, setMsg] = useState("");
   const [theme, setTheme] = useState("dark"); const [openL, setOpenL] = useState(false); const [openP, setOpenP] = useState(false);
   const [mode, setMode] = useState<LockMode | null>(null); const [delay, setDelay] = useState(60); const [bioOk, setBioOk] = useState(false); const [dlg, setDlg] = useState<Dlg>(null); const [openS, setOpenS] = useState(false);
@@ -38,10 +38,13 @@ export default function Settings() {
   async function prep() { setRd("…"); const r = await prepareOffline(); setRd(fmt(r)); if (!r || r.pages < r.total) setMsg(t("Not ready yet. Open the app with internet, wait a few seconds and try again.")); else setMsg(t("Ready for offline use.")); }
   useEffect(() => { if (pushOn) void syncPushLang(lang); }, [lang, pushOn]);
   async function togglePush() {
-    setPushMsg(""); if (pushOn) { await disablePush(); setPushOn(false); return; }
-    const r = await enablePush(lang); if (r === "ok") { setPushOn(true); return; }
-    setPushMsg(r === "denied" ? t("Notifications are blocked. Allow them in your browser settings.") : r === "unsupported" ? t("Notifications aren't supported here. On iPhone, install the app to the Home Screen first.")
-      : r === "blocked" ? t("This browser can't register for push messages. In Brave: Settings → Privacy → turn on “Use Google services for push messaging”, or open MyDoc in Chrome.") : r === "server" ? t("Could not reach the server. Check your connection and try again.") : t("Could not enable notifications."));
+    if (pushBusy) return; setPushMsg(""); if (pushOn) { await disablePush(); setPushOn(false); return; }
+    setPushBusy(true);
+    try {
+      const r = await enablePush(lang); if (r === "ok") { setPushOn(true); return; }
+      setPushMsg(r === "denied" ? t("Notifications are blocked. Allow them in your browser settings.") : r === "unsupported" ? t("Notifications aren't supported here. On iPhone, install the app to the Home Screen first.")
+        : r === "blocked" ? t("This browser can't register for push messages. In Brave: Settings → Privacy → turn on “Use Google services for push messaging”, or open MyDoc in Chrome.") : r === "server" ? t("Could not reach the server. Check your connection and try again.") : t("Could not enable notifications."));
+    } finally { setPushBusy(false); }
   }
   async function testPush() { setPushMsg(""); try { const reg = await navigator.serviceWorker.ready; await reg.showNotification("MyDoc", { body: t("Notifications are working."), icon: "/icons/icon-192.png" }); } catch { setPushMsg(t("Could not enable notifications.")); } }
   async function backup() {
@@ -100,7 +103,7 @@ export default function Settings() {
     <div className="cap">{t("Documents and bills you add offline are saved on this device and sync automatically when you're back online.")}</div>
     <div className="grp"><button className="srow" onClick={backup} disabled={!!bk && bk !== t("Done")}><span className="ico"><svg {...ic}><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg></span><span style={{ flex: 1 }}>{t("Download full backup (ZIP)")}</span><span className="m" style={{ fontSize: 12 }}>{bk}</span></button></div>
     <div className="cap">{t("Notifications")}</div>
-    <div className="grp"><div className="srow" style={{ cursor: "default" }}><span className="ico"><svg {...ic}><path d="M6 16v-5a6 6 0 0112 0v5l2 2H4zM10 21h4" /></svg></span><span style={{ flex: 1 }}>{t("Expiry reminders")}</span><button className="sw" role="switch" aria-checked={pushOn} aria-label={t("Expiry reminders")} onClick={togglePush}><i /></button></div>{pushMsg && <div className="srow sub m" role="alert" style={{ cursor: "default", fontSize: 13 }}>{pushMsg}</div>}{pushOn && <button className="srow sub" onClick={testPush}><span style={{ flex: 1 }}>{t("Send a test notification")}</span></button>}</div>
+    <div className="grp"><div className="srow" style={{ cursor: "default" }}><span className="ico"><svg {...ic}><path d="M6 16v-5a6 6 0 0112 0v5l2 2H4zM10 21h4" /></svg></span><span style={{ flex: 1 }}>{t("Expiry reminders")}</span><button className="sw" role="switch" aria-checked={pushOn} aria-label={t("Expiry reminders")} disabled={pushBusy} style={{ opacity: pushBusy ? 0.5 : 1 }} onClick={togglePush}><i /></button></div>{pushBusy && <div className="srow sub m" role="status" style={{ cursor: "default", fontSize: 13 }}>{t("Enabling…")}</div>}{pushMsg && <div className="srow sub m" role="alert" style={{ cursor: "default", fontSize: 13 }}>{pushMsg}</div>}{pushOn && <button className="srow sub" onClick={testPush}><span style={{ flex: 1 }}>{t("Send a test notification")}</span></button>}</div>
     <div className="cap">{t("Get a notification before your documents expire and when it's time to add a bill.")}</div>
     <div className="cap">{t("Account")}</div>
     <div className="grp"><button className="srow bad" onClick={out}><span className="ico bad"><svg {...ic}><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" /></svg></span><span style={{ flex: 1 }}>{t("Sign out")}</span></button></div>
