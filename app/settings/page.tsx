@@ -7,7 +7,7 @@ import { LANGS } from "@/lib/i18n";
 import { bioSupported, disableLock, enableBio, lockDelay, lockMode, setLockDelay, setPin, type LockMode } from "@/lib/applock";
 import { useT } from "@/components/LangProvider";
 import { useInstall } from "@/components/InstallProvider";
-import { cacheAllFiles, clearOffline } from "@/lib/data";
+import { cacheAllFiles, clearOffline, getConsent, S, saveConsent } from "@/lib/data";
 import { buildBackup } from "@/lib/backup";
 import { offlineStatus, prepareOffline } from "@/lib/offlineStatus";
 import { disablePush, enablePush, pushEnabled, syncPushLang } from "@/lib/push";
@@ -26,11 +26,10 @@ export default function Settings() {
   useEffect(() => {
     const sb = supabaseBrowser(); setTheme(localStorage.getItem("theme") ?? "dark");
     setMode(lockMode()); setDelay(lockDelay()); bioSupported().then(setBioOk);
-    sb.auth.getSession().then(({ data }) => data.session && sb.from("profiles").select("ai_consent").eq("id", data.session.user.id).single().then(({ data: p }) => setConsent(!!p?.ai_consent)));
+    setConsent(getConsent()); if (navigator.onLine) sb.auth.getSession().then(({ data }) => data.session && sb.from("profiles").select("ai_consent").eq("id", data.session.user.id).single().then(({ data: p }) => { if (p && S.ops === 0) { localStorage.setItem("ai.consent", p.ai_consent ? "1" : "0"); setConsent(!!p.ai_consent); } }));
     fetch("/api/ai/status").then((r) => r.json()).then((j) => setProvs(j.providers ?? [])).catch(() => {});
   }, []);
-  async function toggle() { const sb = supabaseBrowser(); const { data: { session } } = await sb.auth.getSession(); const v = !consent; setConsent(v);
-    const { error } = await sb.from("profiles").update({ ai_consent: v }).eq("id", session!.user.id); if (error) { setConsent(!v); setMsg(t("Could not save.")); } }
+  async function toggle() { const v = !consent; setConsent(v); await saveConsent(v); }
   function flip() { const n = theme === "dark" ? "light" : "dark"; setTheme(n); localStorage.setItem("theme", n); document.documentElement.dataset.theme = n; }
   async function wipeChats() { if (!confirm(t("Delete all chats?"))) return; const { error } = await supabaseBrowser().from("ai_conversations").delete().not("id", "is", null); setMsg(error ? t("Could not delete.") : t("Chats deleted.")); }
   async function out() { await supabaseBrowser().auth.signOut().catch(() => {}); await clearOffline(); router.replace("/login"); router.refresh(); }

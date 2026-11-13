@@ -15,7 +15,7 @@ export default function DocActions({ doc }: { doc: DocRow }) {
       if (dl) { const a = document.createElement("a"); a.href = url; a.download = `${doc.title}.${EXT[b.type] ?? "bin"}`; a.click(); } else if (b.type.startsWith("image/")) setImg(url); else window.open(url, "_blank");
     } catch { setErr(t("Could not open the document.")); } finally { setBusy(false); }
   }
-  async function act(fn: () => Promise<void>) { setErr(""); if (!online) return setErr(t("Needs an internet connection.")); try { await fn(); } catch { setErr(t("Could not complete the action.")); } }
+  async function act(fn: () => Promise<void>) { setErr("");  try { await fn(); } catch { setErr(t("Could not complete the action.")); } }
   async function share(hours: number) {
     setErr(""); setNote(""); if (!online) return setErr(t("Needs an internet connection."));
     try { const r = await fetch(`/api/documents/${doc.id}/share?hours=${hours}`); const j = await r.json(); if (!j.url) throw new Error("x"); setShareOpen(false);
